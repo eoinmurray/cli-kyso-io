@@ -1,0 +1,9 @@
+{
+  "name": "kyso",
+  "version": "0.0.2",
+  "description": "Kyso command line library",
+  "main": "index.js",
+  "repository": "eoinmurray/kyso-cli",
+  "author": "eoinmurray <amonecho1@gmail.com>",
+  "license": "MIT"
+}
