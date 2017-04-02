@@ -1,9 +1,46 @@
 {
   "name": "kyso",
   "version": "0.0.2",
-  "description": "Kyso command line library",
-  "main": "index.js",
-  "repository": "eoinmurray/kyso-cli",
-  "author": "eoinmurray <amonecho1@gmail.com>",
-  "license": "MIT"
+  "description": "Kyso command line interface",
+  "bin": {
+    "kyso": "./bin/kyso.js"
+  },
+  "repository": "eoinmurray/cli-kyso-io",
+  "author": "eoinmurray <eoin@kyso.io>",
+  "license": "MIT",
+  "dependencies": {
+    "auth0": "^2.6.0",
+    "babel-cli": "^6.24.0",
+    "babel-core": "6.24.0",
+    "babel-generator": "6.24.0",
+    "babel-loader": "6.4.1",
+    "babel-plugin-module-resolver": "2.6.0",
+    "babel-plugin-react-require": "3.0.0",
+    "babel-plugin-transform-class-properties": "6.22.0",
+    "babel-plugin-transform-es2015-modules-commonjs": "6.24.0",
+    "babel-plugin-transform-object-rest-spread": "6.22.0",
+    "babel-plugin-transform-react-jsx-source": "6.22.0",
+    "babel-plugin-transform-react-remove-prop-types": "0.3.2",
+    "babel-plugin-transform-runtime": "6.22.0",
+    "babel-preset-env": "^1.3.2",
+    "babel-preset-es2015": "6.24.0",
+    "babel-preset-latest": "^6.24.0",
+    "babel-preset-react": "6.23.0",
+    "babel-runtime": "6.23.0",
+    "chalk": "^1.1.3",
+    "commander": "^2.9.0",
+    "email-prompt": "^0.2.0",
+    "email-validator": "^1.0.7",
+    "fs-promise": "^2.0.2",
+    "ms": "^1.0.0",
+    "node-fetch": "^1.6.3",
+    "node-version": "^1.0.0",
+    "ora": "^1.2.0",
+    "querystring": "^0.2.0",
+    "update-notifier": "^2.1.0"
+  },
+  "scripts": {
+    "start": "NODE_ENV=production babel-node ./src/index.js",
+    "dev": "NODE_ENV=development babel-node ./src/index.js"
+  }
 }

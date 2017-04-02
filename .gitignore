@@ -1,0 +1,4 @@
+node_modules/
+logs/
+Icon^M
+.DS_Store
