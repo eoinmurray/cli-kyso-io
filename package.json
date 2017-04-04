@@ -32,15 +32,26 @@
     "email-prompt": "^0.2.0",
     "email-validator": "^1.0.7",
     "fs-promise": "^2.0.2",
+    "global": "^4.3.1",
+    "minimist": "^1.2.0",
     "ms": "^1.0.0",
     "node-fetch": "^1.6.3",
     "node-version": "^1.0.0",
     "ora": "^1.2.0",
+    "parse": "^1.9.2",
     "querystring": "^0.2.0",
+    "text-table": "^0.2.0",
     "update-notifier": "^2.1.0"
   },
+  "devDependencies": {
+    "eslint": "^3.19.0",
+    "eslint-config-airbnb": "^14.1.0",
+    "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-jsx-a11y": "^4.0.0",
+    "eslint-plugin-promise": "^3.5.0",
+    "eslint-plugin-react": "^6.10.3"
+  },
   "scripts": {
-    "start": "NODE_ENV=production babel-node ./src/index.js",
-    "dev": "NODE_ENV=development babel-node ./src/index.js"
+    "dev": "NODE_ENV=development babel-node bin/kyso"
   }
 }

@@ -1,0 +1,23 @@
+{
+  "extends": [
+    "airbnb",
+    "plugin:promise/recommended"
+  ],
+  "rules": {
+    "semi": 0,
+    "no-console": 0,
+    "comma-dangle": 0,
+    "no-underscore-dangle": 0,
+    "no-use-before-define": 0,
+    "arrow-parens": 0,
+    "promise/prefer-await-to-then": "warn",
+    "promise/prefer-await-to-callbacks": "warn",
+    "react/jsx-filename-extension": 0
+  },
+  "plugins": [
+      "react",
+      "jsx-a11y",
+      "import",
+      "promise"
+  ]
+}

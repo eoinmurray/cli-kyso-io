@@ -1,15 +1,8 @@
 #!/usr/bin/env node
-
-// Native
 const { resolve } = require('path')
-
-// Packages
 const nodeVersion = require('node-version')
 const updateNotifier = require('update-notifier')
 const chalk = require('chalk')
-
-// Ours
-// const { error } = require('../src/error')
 const pkg = require('../src/pkg')
 
 // Throw an error if node version is too low
@@ -38,6 +31,8 @@ const commands = new Set([
   defaultCommand,
   'help',
   'login',
+  'teams',
+  'invites'
 ])
 
 const aliases = new Map([])
