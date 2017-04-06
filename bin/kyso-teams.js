@@ -208,7 +208,7 @@ if (argv.help || !subcommand) {
         if (err.userError) {
           error(err.message)
         } else {
-          error(`Unknown error: ${err}\n${err.stack}`)
+          error(`Unknown error: ${err.message}\n${err.stack || ''}`)
         }
         return exit(1)
       }

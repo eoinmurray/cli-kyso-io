@@ -140,7 +140,7 @@ async function run(token) {
       const start = new Date()
       const targetEmail = String(args[0])
       const teamName = String(args[1])
-      info(`> Adding ${chalk.bold(chalk.underline(targetEmail))} to ${chalk.bold(chalk.underline(teamName))}`)
+      info(`Adding ${chalk.bold(chalk.underline(targetEmail))} to ${chalk.bold(chalk.underline(teamName))}`)
       const invite = await invites.create(targetEmail, teamName)
       const elapsed = ms(new Date() - start)
 
@@ -211,7 +211,7 @@ if (argv.help || !subcommand) {
       if (e.userError) {
         error(e.message)
       } else {
-        error(`Unknown error: ${e}\n${e.stack}`)
+        error(`Unknown error: ${e.message}\n${e.stack || ''}`)
       }
       exit(1)
     })
