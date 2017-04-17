@@ -24,7 +24,8 @@ const read = async (path) => {
 }
 
 const merge = async (path, data) => {
-  const cfg = Object.assign({}, await read(path), data)
+  const { studyConfig } = await read(path)
+  const cfg = Object.assign(studyConfig, data)
   return writeFile(resolvePath(path, 'study.json'), JSON.stringify(cfg, null, 2))
 }
 
