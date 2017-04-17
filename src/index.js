@@ -171,6 +171,12 @@ module.exports = class Invites {
 
     this.pkg.scripts[cmd] = this.pkg.scripts[cmd] + cmdArgs
     return lifecycle(this.pkg, cmd, this.dir, true)
+
+    /*
+    DEV:
+      to run a hook called prepush just run like so:
+      `return lifecycle(this.pkg, 'prepush', this.dir, true)`
+    */
   }
 
 }
