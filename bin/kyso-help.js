@@ -23,7 +23,7 @@ const help = () => {
 
   ${chalk.gray('–')} Initializes a study
 
-    ${chalk.cyan('$ kyso init <study name>')}
+    ${chalk.cyan('$ kyso create <study name>')}
 `
   )
 }

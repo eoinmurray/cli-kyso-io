@@ -4,6 +4,7 @@ const secrets = require('./secrets')
 const studyJSON = require('./get-metadata')
 const makeTemplate = require('./study-template')
 const cfg = require('../src/cfg')
+const lifecycle = require('./lifecycle')
 const fs = require('fs-promise')
 
 Parse.initialize(secrets.PARSE_APP_ID)
@@ -18,6 +19,11 @@ module.exports = class Invites {
     this._url = url
     this._token = token
     this.dir = dir
+
+    const { hasStudyJson, studyConfig } = studyJSON.read(this.dir)
+    this.hasStudyJson = hasStudyJson
+    // lets copy the pkg so we can mutate it
+    this.pkg = Object.assign(studyConfig)
   }
 
   async createStudy(name) {
@@ -29,8 +35,7 @@ module.exports = class Invites {
       studyName = name.split('/')[1]
     }
 
-    const { hasStudyJson } = await studyJSON.read(this.dir)
-    if (hasStudyJson) {
+    if (this.hasStudyJson) {
       console.log('A study.json already exists.')
       return false
     }
@@ -103,15 +108,13 @@ module.exports = class Invites {
   }
 
   async addTag(tag) {
-    const { hasStudyJson, studyConfig } = await studyJSON.read(this.dir)
-
-    if (!hasStudyJson) {
+    if (!this.hasStudyJson) {
       const error = new Error('No study.json, cannot list tags.')
       error.userError = true
       throw error
     }
 
-    const _tags = studyConfig.tags || []
+    const _tags = this.pkg.tags || []
     if (_tags.includes(tag)) {
       const error = new Error('Tag already exists.')
       error.userError = true
@@ -121,32 +124,28 @@ module.exports = class Invites {
     _tags.push(tag)
     const tags = _tags
       .filter((val, index, array) => array.indexOf(val) === index)
-    await studyJSON.merge(this.dir, { tags })
+    studyJSON.merge(this.dir, { tags })
     return true
   }
 
   async lsTags() {
-    const { hasStudyJson, studyConfig } = await studyJSON.read(this.dir)
-
-    if (!hasStudyJson) {
+    if (!this.hasStudyJson) {
       const error = new Error('No study.json, cannot list tags.')
       error.userError = true
       throw error
     }
 
-    return studyConfig.tags || []
+    return this.pkg.tags || []
   }
 
   async rmTag(tag) {
-    const { hasStudyJson, studyConfig } = await studyJSON.read(this.dir)
-
-    if (!hasStudyJson) {
+    if (!this.hasStudyJson) {
       const error = new Error('No study.json, cannot list tags.')
       error.userError = true
       throw error
     }
 
-    const _tags = studyConfig.tags || []
+    const _tags = this.pkg.tags || []
     if (!_tags.includes(tag)) {
       const error = new Error('Tag doesn\'t exists.')
       error.userError = true
@@ -159,6 +158,19 @@ module.exports = class Invites {
 
     await studyJSON.merge(this.dir, { tags })
     return true
+  }
+
+  async run(cmd, cmdArgs) {
+    this.pkg.scripts = this.pkg.scripts || {}
+
+    if (!this.pkg.scripts[cmd]) {
+      const error = new Error(`Command "${cmd}" not found in scripts`)
+      error.userError = true
+      throw error
+    }
+
+    this.pkg.scripts[cmd] = this.pkg.scripts[cmd] + cmdArgs
+    return lifecycle(this.pkg, cmd, this.dir, true)
   }
 
 }

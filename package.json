@@ -34,6 +34,7 @@
     "email-validator": "^1.0.7",
     "fs-promise": "^2.0.2",
     "global": "^4.3.1",
+    "graceful-fs": "^4.1.11",
     "minimist": "^1.2.0",
     "ms": "^1.0.0",
     "node-fetch": "^1.6.3",
@@ -42,8 +43,12 @@
     "parse": "^1.9.2",
     "querystring": "^0.2.0",
     "simple-git": "^1.70.0",
+    "slide": "^1.1.6",
     "text-table": "^0.2.0",
-    "update-notifier": "^2.1.0"
+    "uid-number": "^0.0.6",
+    "umask": "^1.1.0",
+    "update-notifier": "^2.1.0",
+    "which": "^1.2.14"
   },
   "devDependencies": {
     "eslint": "^3.19.0",

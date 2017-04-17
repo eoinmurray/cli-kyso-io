@@ -34,13 +34,17 @@ const commands = new Set([
   'teams',
   'invites',
   'studies',
-  'tags'
+  'tags',
+  'run',
+  'create'
 ])
 
 
 // here we can define aliases for the commands
 // ie 'ls' would match 'list'
-const aliases = new Map([])
+const aliases = new Map([
+  ['create', 'studies create']
+])
 
 // use at least the defaultCommand, which is help
 let command = defaultCommand
@@ -67,7 +71,17 @@ if (index > -1) {
     args.unshift('--help')
   }
 
-  command = aliases.get(command) || command
+  let alias = aliases.get(command)
+
+  // if the alias has both a command and subcommand
+  // ie 'create': 'studies create'
+  if (alias && alias.split(' ').length > 1) {
+    // we add the subcommand to the args
+    args.splice(0, 0, alias.split(' ')[1])
+    // and set the alias to the command
+    alias = alias.split(' ')[0]
+  }
+  command = alias || command
 }
 
 // find the command file in the bin folder
