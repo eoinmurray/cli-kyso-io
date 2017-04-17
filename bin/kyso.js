@@ -32,38 +32,50 @@ const commands = new Set([
   'help',
   'login',
   'teams',
-  'invites'
+  'invites',
+  'studies',
+  'tags'
 ])
 
+
+// here we can define aliases for the commands
+// ie 'ls' would match 'list'
 const aliases = new Map([])
 
-let cmd = defaultCommand
+// use at least the defaultCommand, which is help
+let command = defaultCommand
+
+// user given arguments
 const args = process.argv.slice(2)
+
+// find where in the list of commands is this argument
 const index = args.findIndex(a => commands.has(a))
 
+// if the command exists
 if (index > -1) {
-  cmd = args[index]
+  command = args[index]
   args.splice(index, 1)
 
-  if (cmd === 'help') {
+  if (command === 'help') {
     if (index < args.length && commands.has(args[index])) {
-      cmd = args[index]
+      command = args[index]
       args.splice(index, 1)
     } else {
-      cmd = defaultCommand
+      command = defaultCommand
     }
 
     args.unshift('--help')
   }
 
-  cmd = aliases.get(cmd) || cmd
+  command = aliases.get(command) || command
 }
 
-const bin = resolve(__dirname, 'kyso-' + cmd + '.js')
+// find the command file in the bin folder
+const bin = resolve(__dirname, `kyso-${command}.js`)
 
 // Prepare process.argv for subcommand
 process.argv = process.argv.slice(0, 2).concat(args)
 
 // Load sub command
 // With custom parameter to make "pkg" happy
-require(bin, 'may-exclude')
+require(bin, 'may-exclude') //eslint-disable-line

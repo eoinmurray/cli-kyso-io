@@ -1,6 +1,7 @@
 const chalk = require('chalk')
 const fetch = require('node-fetch')
 const { validate } = require('email-validator')
+const { getUser } = require('./rest-request')
 const readEmail = require('email-prompt')
 const secrets = require('./secrets')
 const cfg = require('./cfg')
@@ -57,7 +58,7 @@ async function verifyCode(email, verificationToken) {
   return body
 }
 
-async function getProfile(email, token) {
+async function getAuth0Profile(email, token) {
   const res = await fetch(`${secrets.AUTH0_SERVER_URL}/userinfo`, {
     method: 'get',
     headers: {
@@ -85,6 +86,7 @@ async function getRestrictedSession(token) {
 
   if (res.status !== 201) { throw new Error(`${res.status}, ${res.statusText}`) }
   const body = await res.json()
+  console.log(body)
   return body
 }
 
@@ -118,12 +120,18 @@ async function register({ retryEmail = false } = {}) {
 
   // do something here to retrieve and check email
   const { access_token } = await verifyCode(email, code)
-  const { parse_session_token } = await getProfile(email, access_token)
-  const { sessionToken } = await getRestrictedSession(parse_session_token)
+  const { parse_session_token } = await getAuth0Profile(email, access_token)
+  const user = await getUser(parse_session_token)
+  // const { sessionToken } = await getRestrictedSession(parse_session_token)
 
   process.stdout.write('\n')
 
-  return { email, auth0_token: access_token, token: sessionToken }
+  return {
+    email,
+    auth0_token: access_token,
+    token: parse_session_token,
+    nickname: user.nickname
+  }
 }
 
 module.exports = async function () {

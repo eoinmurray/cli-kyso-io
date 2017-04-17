@@ -2,31 +2,30 @@
 const chalk = require('chalk')
 const table = require('text-table')
 const ms = require('ms')
+const getCommandArgs = require('../src/command-args')
 const strlen = require('../src/strlen')
 const { error, handleError } = require('../src/error')
 const Kyso = require('../src')
 const exit = require('../src/utils/exit')
-const getCommandArgs = require('../src/command-args')
 
-const help = () => {
+const help = async () => {
   console.log(
     `
-  ${chalk.bold('kyso teams')} <ls | create | rm> <teamname>
+  ${chalk.bold('kyso studies')} <ls | create | rm> <studyname>
 
   ${chalk.dim('Options:')}
     -h, --help              Output usage information
-    -d, --debug             Debug mode [off]
 
   ${chalk.dim('Examples:')}
 
-  ${chalk.gray('–')} Lists all your teams:
-      ${chalk.cyan('$ kyso teams ls')}
+  ${chalk.gray('–')} Lists all your studies:
+      ${chalk.cyan('$ kyso studies ls')}
 
-  ${chalk.gray('–')} Creates a team:
-      ${chalk.cyan(`$ kyso teams create ${chalk.underline('my-team-name')}`)}
+  ${chalk.gray('–')} Creates a study:
+      ${chalk.cyan(`$ kyso studies create ${chalk.underline('my-study-name')}`)}
 
-  ${chalk.gray('–')} Removing a team:
-      ${chalk.cyan('$ kyso teams rm my-team-name')}
+  ${chalk.gray('–')} Removing a study:
+      ${chalk.cyan('$ kyso studies rm my-study-name')}
 `
   )
 }
@@ -39,8 +38,8 @@ const ls = async (args, apiUrl, token) => {
   }
 
   const start_ = new Date()
-  const teamList = await kyso.lsTeams()
-  teamList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+  const studyList = await kyso.lsStudies()
+  studyList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
   const current = new Date()
   const header = [
@@ -48,9 +47,9 @@ const ls = async (args, apiUrl, token) => {
   ]
 
   let out = null
-  if (teamList.length !== 0) {
+  if (studyList.length !== 0) {
     out = table(header.concat(
-        teamList.map(t => {
+        studyList.map(t => {
           const time = chalk.gray(`${ms(current - new Date(t.createdAt))} ago`)
           return ['', t.get('name'), time]
         })
@@ -63,7 +62,7 @@ const ls = async (args, apiUrl, token) => {
   }
 
   const elapsed_ = ms(new Date() - start_)
-  console.log(`> ${teamList.length} team${teamList.length === 1 ? '' : 's'} found ${chalk.gray(`[${elapsed_}]`)}`)
+  console.log(`> ${studyList.length} study${studyList.length === 1 ? '' : 's'} found ${chalk.gray(`[${elapsed_}]`)}`)
   if (out) { console.log(`\n${out}\n`) }
   return true
 }
@@ -77,33 +76,34 @@ const rm = async (args, apiUrl, token) => {
 
   const _target = String(args[0])
   if (!_target) {
-    const err = new Error('No team specified')
+    const err = new Error('No study specified')
     err.userError = true
     throw err
   }
 
-  const teamList = await kyso.lsTeams()
-  const _team = teamList.find(d => d.get('name') === _target)
+  const studyList = await kyso.lsStudies()
+  const _study = studyList.find(d => (d.get('name') === _target))
 
-  if (!_team) {
+  if (!_study) {
     const err = new Error(
-      `Team not found on this user account. Run ${chalk.dim('`now teams ls`')} to see your teams.`
+      `Study not found on this user account. Run ${chalk.dim('`kyso studies ls`')} to see your studies.`
     )
     err.userError = true
     throw err
   }
 
-
-  const confirmation = await readConfirmation(_team)
-  if (confirmation !== _team.get('name')) {
+  const confirmation = await readConfirmation(_study)
+  if (confirmation !== _study.get('name')) {
     console.log('\n> Aborted')
     process.exit(0)
   }
 
   const start = new Date()
-  await kyso.rmTeam(_team)
+  await kyso.rmStudy(_study)
   const elapsed = ms(new Date() - start)
-  console.log(`${chalk.cyan('> Success!')} Team ${chalk.bold(_team.get('name'))} removed [${elapsed}]`)
+  console.log(
+    `${chalk.cyan('> Success!')} Study ${chalk.bold(_study.get('name'))} removed [${elapsed}]`
+  )
   return true
 }
 
@@ -116,21 +116,20 @@ const create = async (args, apiUrl, token) => {
 
   const start = new Date()
   const name = String(args[0])
-  const team = await kyso.createTeam(name)
+  const dir = process.cwd()
+  const studyMade = await kyso.createStudy(name, dir)
   const elapsed = ms(new Date() - start)
 
-  if (team) {
-    console.log(`${chalk.cyan('> Success!')} Team ${chalk.bold(chalk.underline(name))} created [${elapsed}]`)
+  if (studyMade) {
+    console.log(`${chalk.cyan('> Success!')} Study ${chalk.bold(chalk.underline(name))} created [${elapsed}]`)
   }
   return true
 }
 
-async function readConfirmation(_team) {
-  return new Promise(resolve => { // eslint-disable-line
-    process.stdout.write(`> The team "${_team.get('name')}" will be removed permanently.\n`)
-    process.stdout.write(`> Please note that deleting this team will delete any and all repositories under the "${_team.get('name')}" account.\n`)
-    process.stdout.write('> Before proceeding, please be sure to review the Kyso Terms of Service regarding account deletion.\n')
-    process.stdout.write(`\n  ${chalk.bold.red('> Enter this team\'s name to confirm: ')}`)
+const readConfirmation = async (_study) =>
+  new Promise(resolve => { // eslint-disable-line
+    process.stdout.write(`> The study "${_study.get('name')}" will be removed permanently.\n`)
+    process.stdout.write(`\n  ${chalk.bold.red('> Enter this study\'s name to confirm: ')}`)
 
     process.stdin
       .on('data', d => {
@@ -138,8 +137,8 @@ async function readConfirmation(_team) {
         resolve(d.toString().trim())
       })
       .resume()
-  })
-}
+  });
+
 
 (async () => {
   try {
