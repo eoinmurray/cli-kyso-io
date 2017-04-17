@@ -105,9 +105,6 @@ const runPackageLifecycle = async (pkg, env, wd, unsafe) => {
 }
 
 const runCmd = async (note, cmd, pkg, env, wd, unsafe) => {
-  const user = null
-  const group = null
-
   if (process.platform === 'win32') {
     unsafe = true // eslint-disable-line
   }
@@ -116,7 +113,8 @@ const runCmd = async (note, cmd, pkg, env, wd, unsafe) => {
     return runCmd_(cmd, pkg, env, wd, unsafe, 0, 0)
   }
 
-  const { uid, gid } = await uidNumber(user, group)
+  const uid = process.getuid()
+  const gid = process.getgid()
   return runCmd_(cmd, pkg, env, wd, unsafe, uid, gid)
 }
 
