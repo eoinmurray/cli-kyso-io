@@ -3,16 +3,25 @@ const Parse = require('parse/node')
 const fs = require('fs-promise')
 const secrets = require('./secrets')
 const studyJSON = require('./get-metadata')
+const getFiles = require('./get-files')
+const hash = require('./hash')
 const makeTemplate = require('./study-template')
 const cfg = require('../src/cfg')
 const lifecycle = require('./lifecycle')
 const _debug = require('./utils/output/debug')
+const wait = require('./utils/output/wait')
+const info = require('./utils/output/info')
 
 Parse.initialize(secrets.PARSE_APP_ID)
 
 const Study = Parse.Object.extend('Study')
+const Version = Parse.Object.extend('Version')
 const Team = Parse.Object.extend('Team')
+const File = Parse.Object.extend('File')
 const Invite = Parse.Object.extend('Invite')
+
+const IS_WIN = process.platform.startsWith('win')
+const SEP = IS_WIN ? '\\' : '/'
 
 module.exports = class Kyso {
   constructor({ url, token, debug = false, dir = process.cwd() }) {
@@ -60,15 +69,22 @@ module.exports = class Kyso {
       const teamQuery = new Parse.Query(Team)
       _debug(this.debug, teamName)
       teamQuery.equalTo('name', teamName)
-      const teamCount = await teamQuery.count({ sessionToken: this._token })
-      if (teamCount === 0) {
+      const teams = await teamQuery.find({ sessionToken: this._token })
+      if (teams.length === 0) {
         const error = new Error(`You don't have access to a team called "${teamName}".`)
         error.userError = true
         throw error
       } else {
-        author = teamName
+        const team = teams[0]
+        author = team.get('name')
       }
     }
+
+    const study = new Study()
+    study.set('name', studyName)
+    study.set('author', author)
+
+    await study.save(null, { sessionToken: this._token })
 
     const template = await makeTemplate({
       name: studyName,
@@ -200,4 +216,101 @@ module.exports = class Kyso {
     */
   }
 
+  async createVersion(message) {
+    if (!this.hasStudyJson) {
+      const error = new Error(`No study.json! Run 'kyso create <study-name> to make a study.'`)
+      error.userError = true
+      throw error
+    }
+
+    const fileList = await getFiles(this.dir, this.pkg, { debug: this.debug })
+    const hashes = await hash(fileList)
+    const _files = hashes
+
+    const files = await Promise.all(Array.prototype.concat.apply([],
+      await Promise.all(Array.from(_files).map(async ([sha, { data, names }]) => {
+        const statFn = fs.stat
+        return names.map(async name => {
+          let mode
+          const getMode = async () => {
+            const st = await statFn(name)
+            return st.mode
+          }
+
+          if (this._static) {
+            if (toRelative(name, this.dir) === 'package.json') {
+              mode = 33261
+            } else {
+              mode = await getMode()
+              name = this.pathInsideContent(name) // eslint-disable-line
+            }
+          } else {
+            mode = await getMode()
+          }
+
+          return {
+            sha,
+            size: data.length,
+            file: toRelative(name, this.dir),
+            mode,
+            data: data.toString('base64')
+          }
+        })
+      }))
+    ))
+
+    const version = new Version()
+    version.set('message', message)
+    const relation = version.relation('files')
+    const fileMap = {}
+
+    await Promise.all(Array.from(files).map(async ({ sha, size, file, data }) => {
+      const fileQuery = new Parse.Query(File)
+      fileQuery.equalTo('sha', sha)
+      const existingFiles = await fileQuery.find({ sessionToken: this._token })
+
+      let fileObj
+      if (existingFiles.length > 0) {
+        fileObj = existingFiles[0]
+      } else {
+        const parseFile = new Parse.File(sha, { base64: data })
+        await parseFile.save({ sessionToken: this._token })
+        fileObj = new File()
+
+        await fileObj.save({
+          file: parseFile,
+          name: file,
+          size,
+          sha
+        }, { sessionToken: this._token })
+      }
+
+      relation.add(fileObj)
+      fileMap[sha] = file
+    }))
+
+    version.set('fileMap', fileMap)
+    await version.save(null, { sessionToken: this._token })
+  }
+
+  async lsVersions() {
+    const query = new Parse.Query(Version)
+    const versions = await query.find({ sessionToken: this._token })
+    return versions
+  }
+
+  async rmVersion(version) {
+    return version.destroy({ sessionToken: this._token })
+  }
+}
+
+const toRelative = (_path, base) => {
+  const fullBase = base.endsWith(SEP) ? base : base + SEP
+  let relative = _path.substr(fullBase.length)
+
+  if (relative.startsWith(SEP)) {
+    relative = relative.substr(1)
+  }
+
+  return relative.replace(/\\/g, '/')
 }
