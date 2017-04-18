@@ -34,8 +34,7 @@ const help = () => {
   )
 }
 
-const ls = async (args, apiUrl, token) => {
-  const kyso = new Kyso(apiUrl, token)
+const ls = async (kyso, args) => {
   if (args.length !== 0) {
     error('Invalid number of arguments')
     return exit(1)
@@ -70,8 +69,7 @@ const ls = async (args, apiUrl, token) => {
   return true
 }
 
-const rm = async (args, apiUrl, token) => {
-  const kyso = new Kyso(apiUrl, token)
+const rm = async (kyso, args) => {
   if (args.length !== 1) {
     error('Invalid number of arguments')
     return exit(1)
@@ -107,8 +105,7 @@ const rm = async (args, apiUrl, token) => {
   return true
 }
 
-const add = async (args, apiUrl, token) => {
-  const kyso = new Kyso(apiUrl, token)
+const add = async (kyso, args) => {
   if (args.length !== 2) {
     error('Invalid number of arguments')
     return exit(1)
@@ -152,16 +149,23 @@ async function readConfirmation(_invite) {
       return exit(0)
     }
 
+    const kyso = new Kyso({
+      url: apiUrl,
+      token,
+      debug: argv.debug,
+      dir: process.cwd()
+    })
+
     if (subcommand === 'ls' || subcommand === 'list') {
-      return await ls(args, apiUrl, token)
+      return await ls(kyso, args)
     }
 
     if (subcommand === 'rm' || subcommand === 'remove') {
-      return await rm(args, apiUrl, token)
+      return await rm(kyso, args)
     }
 
     if (subcommand === 'create') {
-      return await add(args, apiUrl, token)
+      return await add(kyso, args)
     }
 
     error('Please specify a valid subcommand: ls | create | rm | help')

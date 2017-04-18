@@ -1,37 +1,43 @@
 const path = require('path')
 const Parse = require('parse/node')
+const fs = require('fs-promise')
 const secrets = require('./secrets')
 const studyJSON = require('./get-metadata')
 const makeTemplate = require('./study-template')
 const cfg = require('../src/cfg')
 const lifecycle = require('./lifecycle')
-const fs = require('fs-promise')
+const _debug = require('./utils/output/debug')
 
 Parse.initialize(secrets.PARSE_APP_ID)
-Parse.serverURL = secrets.PARSE_SERVER_URL
 
 const Study = Parse.Object.extend('Study')
 const Team = Parse.Object.extend('Team')
 const Invite = Parse.Object.extend('Invite')
 
-module.exports = class Invites {
-  constructor(url, token, dir = process.cwd()) {
-    this._url = url
+module.exports = class Kyso {
+  constructor({ url, token, debug = false, dir = process.cwd() }) {
+    Parse.serverURL = url
     this._token = token
     this.dir = dir
+    this.debug = debug
+    _debug(this.debug, `Kyso object.`)
+    _debug(this.debug, `dir: ${dir}`)
+    _debug(this.debug, `url: ${url}`)
+    _debug(this.debug, `token: ${token}`)
 
     const { hasStudyJson, studyConfig } = studyJSON.read(this.dir)
     this.hasStudyJson = hasStudyJson
     // lets copy the pkg so we can mutate it
-    this.pkg = Object.assign(studyConfig)
+    this.pkg = hasStudyJson ? Object.assign(studyConfig) : null
   }
 
   async createStudy(name) {
-    let userOrTeam = null
+    let teamName = null
     let studyName = name
+    let author = cfg.read().nickname
 
     if (name.includes('/')) {
-      userOrTeam = name.split('/')[0]
+      teamName = name.split('/')[0]
       studyName = name.split('/')[1]
     }
 
@@ -49,9 +55,24 @@ module.exports = class Invites {
       throw error
     }
 
+    if (teamName && teamName !== cfg.read().nickname) {
+      // it might be a team lets check
+      const teamQuery = new Parse.Query(Team)
+      _debug(this.debug, teamName)
+      teamQuery.equalTo('name', teamName)
+      const teamCount = await teamQuery.count({ sessionToken: this._token })
+      if (teamCount === 0) {
+        const error = new Error(`You don't have access to a team called "${teamName}".`)
+        error.userError = true
+        throw error
+      } else {
+        author = teamName
+      }
+    }
+
     const template = await makeTemplate({
       name: studyName,
-      author: cfg.read().nickname
+      author
     })
 
     await fs.writeFile(path.join(this.dir, 'study.json'), template)
@@ -72,7 +93,7 @@ module.exports = class Invites {
   async createTeam(name) {
     const team = new Team()
     team.set('name', name)
-
+    _debug(this.debug, `Saving team.`)
     return team.save(null, { sessionToken: this._token })
   }
 

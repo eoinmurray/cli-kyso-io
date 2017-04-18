@@ -31,8 +31,7 @@ const help = () => {
   )
 }
 
-const ls = async (args, apiUrl, token) => {
-  const kyso = new Kyso(apiUrl, token)
+const ls = async (kyso, args) => {
   if (args.length !== 0) {
     error('Invalid number of arguments')
     return exit(1)
@@ -68,8 +67,7 @@ const ls = async (args, apiUrl, token) => {
   return true
 }
 
-const rm = async (args, apiUrl, token) => {
-  const kyso = new Kyso(apiUrl, token)
+const rm = async (kyso, args) => {
   if (args.length !== 1) {
     error('Invalid number of arguments')
     return exit(1)
@@ -93,7 +91,6 @@ const rm = async (args, apiUrl, token) => {
     throw err
   }
 
-
   const confirmation = await readConfirmation(_team)
   if (confirmation !== _team.get('name')) {
     console.log('\n> Aborted')
@@ -107,16 +104,24 @@ const rm = async (args, apiUrl, token) => {
   return true
 }
 
-const create = async (args, apiUrl, token) => {
-  const kyso = new Kyso(apiUrl, token)
+const create = async (kyso, args) => {
   if (args.length !== 1) {
     error('Invalid number of arguments')
     return exit(1)
   }
 
+  if (kyso.debug) {
+    console.log('[debug] Starting to create team.')
+  }
+
   const start = new Date()
   const name = String(args[0])
   const team = await kyso.createTeam(name)
+
+  if (kyso.debug) {
+    console.log('[debug] Saved team.')
+  }
+
   const elapsed = ms(new Date() - start)
 
   if (team) {
@@ -150,16 +155,23 @@ async function readConfirmation(_team) {
       return exit(0)
     }
 
+    const kyso = new Kyso({
+      url: apiUrl,
+      token,
+      debug: argv.debug,
+      dir: process.cwd()
+    })
+
     if (subcommand === 'ls' || subcommand === 'list') {
-      return await ls(args, apiUrl, token)
+      return await ls(kyso, args)
     }
 
     if (subcommand === 'rm' || subcommand === 'remove') {
-      return await rm(args, apiUrl, token)
+      return await rm(kyso, args)
     }
 
     if (subcommand === 'create') {
-      return await create(args, apiUrl, token)
+      return await create(kyso, args)
     }
 
     error('Please specify a valid subcommand: ls | create | rm | help')

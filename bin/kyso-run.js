@@ -18,8 +18,7 @@ const help = async () => {
 }
 
 
-const run = async (cmd, args, apiUrl, token) => {
-  const kyso = new Kyso(apiUrl, token)
+const run = async (kyso, cmd, args) => {
   const start = new Date()
 
   const cmdArgs = joinArgs(args)
@@ -43,13 +42,21 @@ const joinArgs = (args) => {
 (async () => {
   try {
     const { argv, token, apiUrl } = await getCommandArgs()
+
+    const kyso = new Kyso({
+      url: apiUrl,
+      token,
+      debug: argv.debug,
+      dir: process.cwd()
+    })
+
     const args = process.argv.slice(2)
     const cmd = args.shift()
     if (argv.help || !cmd) {
       help()
       return exit(0)
     }
-    return await run(cmd, args, apiUrl, token)
+    return await run(kyso, cmd, args)
   } catch (err) {
     return handleError(err)
   }
