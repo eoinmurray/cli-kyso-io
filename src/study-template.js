@@ -1,5 +1,3 @@
-const { exec } = require('child-process-promise')
-
 module.exports = async (args) => {
   const template = {
     name: args.name,
@@ -7,8 +5,6 @@ module.exports = async (args) => {
     tags: [],
     scripts: {},
     metadata: {}
-    // files: [],
-    // version: {},
   }
 
   return JSON.stringify(template, null, 3)

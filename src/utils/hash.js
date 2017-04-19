@@ -45,4 +45,15 @@ const hashes = async (files, isStatic, pkg) => {
 
 const hash = (buf) => createHash('sha1').update(buf).digest('hex')
 
-module.exports = hashes
+const groupHash = (hashList) => {
+  const binaryList = hashList
+    .map(h => h.sha)
+    .sort() // <- NB since we need to groupHash to be the same every time
+    .map(h => new Buffer(h, 'hex'))
+  const concatedBytes = Buffer.concat(binaryList)
+  const finalSha = createHash('sha1').update(concatedBytes).digest('hex')
+  return finalSha
+}
+
+exports.hash = hashes
+exports.groupHash = groupHash
