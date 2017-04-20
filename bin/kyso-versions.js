@@ -127,13 +127,20 @@ const create = async (kyso, args) => {
   const start = new Date()
   const message = String(args[0])
   const dir = process.cwd()
-  const versionMade = await kyso.createVersion(message, dir)
-  const elapsed = ms(new Date() - start)
-
-  if (versionMade) {
-    console.log(`${chalk.cyan('> Success!')} Version ${chalk.bold(chalk.underline(message))} created [${elapsed}]`)
+  try {
+    const versionMade = await kyso.createVersion(message, dir)
+    const elapsed = ms(new Date() - start)
+    if (versionMade) {
+      console.log(`${chalk.cyan('> Success!')} Version ${chalk.bold(chalk.underline(message))} created [${elapsed}]`)
+    }
+    return true
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      console.log(`${chalk.red('> Error! Couldn\'t preversion hook. Check the "scripts" field of study.json')}`)
+      return false
+    }
+    throw err
   }
-  return true
 }
 
 (async () => {

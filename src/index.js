@@ -205,6 +205,8 @@ module.exports = class Kyso {
 
   async createVersion(message) {
     // if no study.json we cant make a version
+    await lifecycle(this.pkg, 'preversion', this.dir, true)
+
     if (!this.hasStudyJson) {
       const error = new Error(`No study.json! Run 'kyso create <study-name> to make a study.'`)
       error.userError = true

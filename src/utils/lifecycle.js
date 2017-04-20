@@ -1,6 +1,5 @@
 const path = require('path')
 const fs = require('fs-promise')
-const uidNumber = require('uid-number')
 const which = require('which')
 const spawn = require('./spawn')
 
@@ -119,58 +118,65 @@ const runCmd = async (note, cmd, pkg, env, wd, unsafe) => {
 }
 
 const runCmd_ = async (cmd, pkg, env, wd, unsafe, uid, gid) => {
-  const conf = {
-    cwd: wd,
-    env,
-    stdio: [0, 1, 2]
-  }
+  return new Promise((resolve, reject) => {
 
-  if (!unsafe) {
-    conf.uid = uid ^ 0 // eslint-disable-line
-    conf.gid = gid ^ 0 // eslint-disable-line
-  }
-
-  let sh = 'sh'
-  let shFlag = '-c'
-  if (process.platform === 'win32') {
-    sh = process.env.comspec || 'cmd'
-    shFlag = '/d /s /c'
-    conf.windowsVerbatimArguments = true
-  }
-
-  const proc = spawn(sh, [shFlag, cmd], conf)
-
-  const procError = (er) => {
-    process.removeListener('SIGTERM', procKill)
-    process.removeListener('SIGTERM', procInterupt)
-    process.removeListener('SIGINT', procKill)
-    if (er) throw er
-  }
-
-  const procKill = () => {
-    proc.kill()
-  }
-
-  const procInterupt = () => {
-    proc.kill('SIGINT')
-    proc.on('exit', () => {
-      process.exit()
-    })
-    process.once('SIGINT', procKill)
-  }
-
-  proc.on('error', procError)
-  proc.on('close', (code, signal) => {
-    if (signal) {
-      process.kill(process.pid, signal)
-    } else if (code) {
-      const er = new Error(`Exit status ${code}`)
-      er.errno = code
-      procError(er)
+    const conf = {
+      cwd: wd,
+      env,
+      stdio: [0, 1, 2]
     }
+
+    if (!unsafe) {
+      conf.uid = uid ^ 0 // eslint-disable-line
+      conf.gid = gid ^ 0 // eslint-disable-line
+    }
+
+    let sh = 'sh'
+    let shFlag = '-c'
+    if (process.platform === 'win32') {
+      sh = process.env.comspec || 'cmd'
+      shFlag = '/d /s /c'
+      conf.windowsVerbatimArguments = true
+    }
+
+    const proc = spawn(sh, [shFlag, cmd], conf)
+
+    const procError = (er) => {
+      process.removeListener('SIGTERM', procKill)
+      process.removeListener('SIGTERM', procInterupt)
+      process.removeListener('SIGINT', procKill)
+      if (er.code === 'ENOENT') {
+        er.userError = true // eslint-disable-line
+      }
+      reject(er)
+    }
+
+    const procKill = () => {
+      proc.kill()
+    }
+
+    const procInterupt = () => {
+      proc.kill('SIGINT')
+      proc.on('exit', () => {
+        process.exit()
+      })
+      process.once('SIGINT', procKill)
+    }
+
+    proc.on('error', procError)
+    proc.on('close', (code, signal) => {
+      if (signal) {
+        process.kill(process.pid, signal)
+        resolve()
+      } else if (code) {
+        const er = new Error(`Exit status ${code}`)
+        er.errno = code
+        procError(er)
+      }
+    })
+    process.once('SIGTERM', procKill)
+    process.once('SIGINT', procInterupt)
   })
-  process.once('SIGTERM', procKill)
-  process.once('SIGINT', procInterupt)
 }
 
 const runHookLifecycle = async (pkg, env, wd, unsafe) => { // eslint-disable-line

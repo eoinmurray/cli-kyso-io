@@ -6,7 +6,8 @@
     "kyso": "./bin/kyso.js"
   },
   "scripts": {
-    "link": "npm link"
+    "link": "npm link",
+    "dev": "ech"
   },
   "repository": "eoinmurray/cli-kyso-io",
   "author": "eoinmurray <eoin@kyso.io>",
