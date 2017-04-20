@@ -1,9 +1,0 @@
-{
-   "name": "my-study",
-   "author": "eoins-team",
-   "tags": [],
-   "scripts": {
-     "preversion":  "ech 'this is a pre version hook'"
-   },
-   "metadata": {}
-}

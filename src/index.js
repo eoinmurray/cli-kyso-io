@@ -3,6 +3,7 @@ const Parse = require('parse/node')
 const fs = require('fs-promise')
 const cfg = require('../src/cfg')
 const secrets = require('./secrets')
+const clone = require('./clone')
 const studyJSON = require('./get-metadata')
 const makeTemplate = require('./study-template')
 const lifecycle = require('./utils/lifecycle')
@@ -305,5 +306,50 @@ message: ${existingVersion.get('message')}`)
 
   async rmVersion(version) {
     return version.destroy({ sessionToken: this._token })
+  }
+
+  async clone(studyName, teamName, versionSha = null) {
+    const studyList = await this.lsStudies()
+    const study = studyList.find(d => (d.get('name') === studyName && d.get('author') === teamName))
+
+    if (!study) {
+      const err = new Error(`Study "${studyName}" does not exist`)
+      err.userError = true
+      throw err
+    }
+
+    const query = study.relation('versions').query()
+
+    if (versionSha) {
+      _debug(this.debug, `Fetching version with sha ${versionSha}`)
+      query.startsWith('sha', versionSha)
+    } else {
+      query.limit(1)
+      query.descending('createdAt')
+    }
+
+    const versions = await query.find({ sessionToken: this._token })
+
+    if (!versions.length) {
+      let err = new Error(`No versions of ${study.get('name')} found`)
+      if (versionSha) {
+        err = new Error(`No matching versions of ${study.get('name')} found`)
+      }
+      err.userError = true
+      throw err
+    }
+
+    const version = versions[0]
+
+    const fileQuery = version.relation('files').query()
+    const files = await fileQuery.find({ sessionToken: this._token })
+
+    if (!versions.length) {
+      const err = new Error(`No files in ${study.get('name')} version ${version.get('sha').slice(0, 6)} found`)
+      err.userError = true
+      throw err
+    }
+
+    return clone(study, version, files, this.dir)
   }
 }

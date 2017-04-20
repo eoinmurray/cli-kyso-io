@@ -36,6 +36,7 @@ const commands = new Set([
   'studies',
   'tags',
   'run',
+  'clone',
   'versions',
   'create'
 ])

@@ -9,10 +9,7 @@ const help = () => {
 
   ${chalk.dim('Commands:')}
 
-    studies              [cmd]        Manages your studies
-    teams                [cmd]        Manages your teams
-    invites              [cmd]        Manages invitations to your teams
-    help                 [cmd]        Displays complete help for [cmd]
+    TODO
 
   ${chalk.dim('Options:')}
 
@@ -21,9 +18,7 @@ const help = () => {
 
   ${chalk.dim('Examples:')}
 
-  ${chalk.gray('–')} Initializes a study
-
-    ${chalk.cyan('$ kyso create <study name>')}
+    TODO
 `
   )
 }

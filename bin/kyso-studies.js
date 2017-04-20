@@ -47,10 +47,10 @@ const ls = async (kyso, args) => {
     out = table(header.concat(
         studyList.map(t => {
           const time = chalk.gray(`${ms(current - new Date(t.createdAt))} ago`)
-          return ['', t.get('name'), time]
+          return ['', `${t.get('author')}/${t.get('name')}`, time]
         })
       ), {
-        align: ['l', 'r', 'l', 'l', 'l', 'l'],
+        align: ['l', 'l', 'l'],
         hsep: ' '.repeat(2),
         stringLength: strlen
       }
