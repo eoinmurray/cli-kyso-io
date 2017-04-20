@@ -241,15 +241,6 @@ module.exports = class Kyso {
     // TODO: create version hash
 
     const versionSha = versionHash(files, message, { debug: this.debug })
-
-    // rodrigo 16-19
-    // look at train from madrid to ronda fri-mon
-    // dont allow a version with exactly the same files
-
-    // Paco + Elena arrive 30th Sunday
-    // 1-4th Mon-Thurs all together
-    // Friday Helena has wedding
-    // Feria in Sevilla 1st May??
     const existingVersion = await findOne(versionSha, Version, this._token, { key: 'sha', debug: this.debug })
 
     if (existingVersion) {
@@ -293,7 +284,14 @@ message: ${existingVersion.get('message')}`)
   }
 
   async lsVersions() {
-    const query = new Parse.Query(Version)
+    if (!this.hasStudyJson) {
+      const error = new Error(`No study.json! Run 'kyso create <study-name> to make a study.'`)
+      error.userError = true
+      throw error
+    }
+
+    const study = await findOne(this.pkg.name, Study, this._token, { throwENOENT: true })
+    const query = await study.relation('versions').query()
     const versions = await query.find({ sessionToken: this._token })
     return versions
   }
