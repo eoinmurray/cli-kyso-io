@@ -232,7 +232,7 @@ module.exports = class Kyso {
     // fileMap is an object with all the sha's and relative file paths
     version.set('fileMap', fileMap)
     // lets keep a copy of the whole package in case there's any extra stuff the user wants
-    version.set('_pkg', this.pkg)
+    version.set('pkg', this.pkg)
     version.set('repository', await getGit())
     // get all the files in this dir, obeying the ignore rules etc
     const files = await getFileMap(this.dir, this.pkg, { debug: this.debug })
@@ -259,14 +259,17 @@ message: ${existingVersion.get('message')}`)
       Array.from(files).map(async ({ sha, size, file, data }) => {
         // check if file exists, if so add it to the version, otherwise upload and make new file
         let fileObj = await findOne(sha, File, this._token, { key: 'sha' })
-
-        _debug(this.debug, `Uploading ${file} (size ${size})`)
+        _debug(this.debug && fileObj, `Referencing ${file} (size ${size})`)
         if (!fileObj) {
-          // upload
-          const _upload = new Parse.File(sha, { base64: size === 0 ? data : null })
-          await _upload.save({ sessionToken: this._token })
+          _debug(this.debug, `Uploading ${file} (size ${size})`)
+          let _upload = null
+          if (size > 0) {
+            _upload = new Parse.File(sha, { base64: data })
+            await _upload.save({ sessionToken: this._token })
+          }
+
           fileObj = new File()
-          await fileObj.save({ file: _upload, name: file, size, sha }, { sessionToken: this._token }) // eslint-disable-line
+          await fileObj.save({ file: _upload, name: file, size, sha, author: this.pkg.author }, { sessionToken: this._token }) // eslint-disable-line
         }
         versionFiles.add(fileObj)
         fileMap[sha] = file
@@ -275,8 +278,8 @@ message: ${existingVersion.get('message')}`)
 
     // if everything good, then save version and study
     // add version to study
+    version.set('author', this.pkg.author)
     await version.save(null, { sessionToken: this._token })
-
     _debug(this.debug, `Adding version to study.`)
     studyVersions.add(version)
     await study.save(null, { sessionToken: this._token })
