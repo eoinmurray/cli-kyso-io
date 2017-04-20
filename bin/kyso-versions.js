@@ -136,7 +136,7 @@ const create = async (kyso, args) => {
     return true
   } catch (err) {
     if (err.code === 'ENOENT') {
-      console.log(`${chalk.red('> Error! Couldn\'t preversion hook. Check the "scripts" field of study.json')}`)
+      console.log(`${chalk.red('> Error! Couldn\'t run pre or post version hook. Check the "scripts" field of study.json')}`)
       return false
     }
     throw err

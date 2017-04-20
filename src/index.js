@@ -285,6 +285,8 @@ message: ${existingVersion.get('message')}`)
     _debug(this.debug, `Adding version to study.`)
     studyVersions.add(version)
     await study.save(null, { sessionToken: this._token })
+
+    await lifecycle(this.pkg, 'postversion', this.dir, true)
     return true
   }
 
