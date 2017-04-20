@@ -2,11 +2,14 @@
 const chalk = require('chalk')
 const table = require('text-table')
 const ms = require('ms')
+const { eraseLines } = require('ansi-escapes')
+const promptBool = require('../src/utils/input/prompt-bool')
 const getCommandArgs = require('../src/command-args')
-const strlen = require('../src/strlen')
 const { error, handleError } = require('../src/error')
-const Kyso = require('../src')
+const strlen = require('../src/strlen')
 const exit = require('../src/utils/exit')
+const Kyso = require('../src')
+
 
 const help = async () => {
   console.log(
@@ -22,10 +25,10 @@ const help = async () => {
       ${chalk.cyan('$ kyso versions ls')}
 
   ${chalk.gray('–')} Creates a version:
-      ${chalk.cyan(`$ kyso versions create ${chalk.underline('my-version-name')}`)}
+      ${chalk.cyan(`$ kyso versions create ${chalk.underline('"a commit message"')}`)}
 
   ${chalk.gray('–')} Removing a version:
-      ${chalk.cyan('$ kyso versions rm my-version-name')}
+      ${chalk.cyan('$ kyso versions rm <version>')}
 `
   )
 }
@@ -42,7 +45,7 @@ const ls = async (kyso, args) => {
 
   const current = new Date()
   const header = [
-    ['', 'name', 'created'].map(s => chalk.dim(s))
+    ['created', 'version (6-digits)', 'message'].map(s => chalk.dim(s))
   ]
 
   let out = null
@@ -50,10 +53,10 @@ const ls = async (kyso, args) => {
     out = table(header.concat(
         versionList.map(t => {
           const time = chalk.gray(`${ms(current - new Date(t.createdAt))} ago`)
-          return ['', t.get('name'), time]
+          return [time, t.get('sha').slice(0, 6), t.get('message')]
         })
       ), {
-        align: ['l', 'r', 'l', 'l', 'l', 'l'],
+        align: ['l', 'l', 'l', 'l', 'l', 'l'],
         hsep: ' '.repeat(2),
         stringLength: strlen
       }
@@ -80,7 +83,7 @@ const rm = async (kyso, args) => {
   }
 
   const versionList = await kyso.lsVersions()
-  const _version = versionList.find(d => (d.get('name') === _target))
+  const _version = versionList.find(d => (d.get('sha').slice(0, 6) === _target))
 
   if (!_version) {
     const err = new Error(
@@ -90,10 +93,20 @@ const rm = async (kyso, args) => {
     throw err
   }
 
-  const confirmation = await readConfirmation(_version)
-  if (confirmation !== _version.get('name')) {
-    console.log('\n> Aborted')
-    process.exit(0)
+  let proceed
+  try {
+    const label = `Are you sure you want to delete this version?`
+    proceed = await promptBool(label, { trailing: eraseLines(2) })
+  } catch (err) {
+    if (err.message === 'USER_ABORT') {
+      proceed = false
+    } else {
+      throw err
+    }
+  }
+
+  if (!proceed) {
+    return false
   }
 
   const start = new Date()
@@ -122,20 +135,6 @@ const create = async (kyso, args) => {
   }
   return true
 }
-
-const readConfirmation = async (_version) =>
-  new Promise(resolve => { // eslint-disable-line
-    process.stdout.write(`> The version "${_version.get('name')}" will be removed permanently.\n`)
-    process.stdout.write(`\n  ${chalk.bold.red('> Enter this version\'s name to confirm: ')}`)
-
-    process.stdin
-      .on('data', d => {
-        process.stdin.pause()
-        resolve(d.toString().trim())
-      })
-      .resume()
-  });
-
 
 (async () => {
   try {

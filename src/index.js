@@ -8,7 +8,7 @@ const makeTemplate = require('./study-template')
 const lifecycle = require('./utils/lifecycle')
 const getFileMap = require('./utils/get-file-map')
 const resolveMain = require('./utils/resolve-main')
-const { groupHash } = require('./utils/hash')
+const { versionHash } = require('./utils/hash')
 const findOne = require('./utils/find-one')
 const getGit = require('./utils/get-git')
 const _debug = require('./utils/output/debug')
@@ -240,26 +240,47 @@ module.exports = class Kyso {
     version.set('main', main)
     // TODO: create version hash
 
-    const versionSha = groupHash(files)
-    version.set('sha', versionSha)
+    const versionSha = versionHash(files, message, { debug: this.debug })
 
-    await version.save(null, { sessionToken: this._token })
+    // rodrigo 16-19
+    // look at train from madrid to ronda fri-mon
+    // dont allow a version with exactly the same files
+
+    // Paco + Elena arrive 30th Sunday
+    // 1-4th Mon-Thurs all together
+    // Friday Helena has wedding
+    // Feria in Sevilla 1st May??
+    const existingVersion = await findOne(versionSha, Version, this._token, { key: 'sha', debug: this.debug })
+
+    if (existingVersion) {
+      const err = new Error(`
+A version with the same sha exists, meaning no files have changed.
+The clashing version is:
+commit: ${existingVersion.get('sha')}
+message: ${existingVersion.get('message')}`)
+      err.userError = true
+      throw err
+    }
+
+    version.set('sha', versionSha)
     // big job here! upload all the files if nessecary, or get the ref, and add to the version
-    _debug(this.debug, `Uploading now.`)
-    await Promise.all(Array.from(files).map(async ({ sha, size, file, data }) => {
-      // check if file exists, if so add it to the version, otherwise upload and make new file
-      let fileObj = await findOne(sha, File, this._token, { key: 'sha', debug: this.debug })
-      _debug(this.debug && fileObj, `Found existing file for ${file}, using a reference`)
-      if (!fileObj) {
-        // upload
-        const _upload = new Parse.File(sha, { base64: data })
-        await _upload.save({ sessionToken: this._token })
-        fileObj = new File()
-        await fileObj.save({ file: _upload, name: file, size, sha }, { sessionToken: this._token })
-      }
-      versionFiles.add(fileObj)
-      fileMap[sha] = file
-    }))
+    await Promise.all(
+      Array.from(files).map(async ({ sha, size, file, data }) => {
+        // check if file exists, if so add it to the version, otherwise upload and make new file
+        let fileObj = await findOne(sha, File, this._token, { key: 'sha' })
+
+        _debug(this.debug, `Uploading ${file} (size ${size})`)
+        if (!fileObj) {
+          // upload
+          const _upload = new Parse.File(sha, { base64: size === 0 ? data : null })
+          await _upload.save({ sessionToken: this._token })
+          fileObj = new File()
+          await fileObj.save({ file: _upload, name: file, size, sha }, { sessionToken: this._token }) // eslint-disable-line
+        }
+        versionFiles.add(fileObj)
+        fileMap[sha] = file
+      })
+    )
 
     // if everything good, then save version and study
     // add version to study
@@ -268,6 +289,7 @@ module.exports = class Kyso {
     _debug(this.debug, `Adding version to study.`)
     studyVersions.add(version)
     await study.save(null, { sessionToken: this._token })
+    return true
   }
 
   async lsVersions() {

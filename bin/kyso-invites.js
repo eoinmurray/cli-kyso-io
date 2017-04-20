@@ -164,11 +164,11 @@ async function readConfirmation(_invite) {
       return await rm(kyso, args)
     }
 
-    if (subcommand === 'create') {
+    if (subcommand === 'add') {
       return await add(kyso, args)
     }
 
-    error('Please specify a valid subcommand: ls | create | rm | help')
+    error('Please specify a valid subcommand: ls | add | rm | help')
     return help()
   } catch (err) {
     return handleError(err)

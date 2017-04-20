@@ -1,7 +1,7 @@
 const { createHash } = require('crypto')
 const path = require('path')
 const { readFile } = require('fs-promise')
-
+const _debug = require('./output/debug')
 /**
   * Computes hashes for the contents of each file given.
   *
@@ -45,15 +45,30 @@ const hashes = async (files, isStatic, pkg) => {
 
 const hash = (buf) => createHash('sha1').update(buf).digest('hex')
 
-const groupHash = (hashList) => {
-  const binaryList = hashList
+const versionHash = (hashList, message, { debug = false } = {}) => {
+  // must add header which contains file names and message
+
+  const filenames = hashList
+    .map(h => h.file)
+    .sort()
+
+  const header = `${filenames.join(',')}`
+  _debug(debug, `Version has header: ${header}`)
+
+  const dataBufferList = hashList
     .map(h => h.sha)
-    .sort() // <- NB since we need to groupHash to be the same every time
-    .map(h => new Buffer(h, 'hex'))
-  const concatedBytes = Buffer.concat(binaryList)
-  const finalSha = createHash('sha1').update(concatedBytes).digest('hex')
+    .sort() // <- NB since we need to versionHash to be the same every time
+    .map(h => Buffer.from(h))
+
+  const headerBuffer = Buffer.from(header)
+  const buf = Buffer.concat(dataBufferList.concat(headerBuffer))
+  const finalSha = createHash('sha1').update(buf).digest('hex')
+  // _debug(debug, `Sha no header: ${createHash('sha1').update(Buffer.concat(dataBufferList)).digest('hex')}`)
+  // _debug(debug, `Sha of header: ${createHash('sha1').update(Buffer.concat([headerBuffer])).digest('hex')}`)
+  // _debug(debug, `Sha with header: ${finalSha}`)
+
   return finalSha
 }
 
 exports.hash = hashes
-exports.groupHash = groupHash
+exports.versionHash = versionHash

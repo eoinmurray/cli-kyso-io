@@ -11,9 +11,13 @@ module.exports = async (val, ParseClass, _token, { key = 'name', throwENOENT = f
   const results = await query.find({ sessionToken: _token })
 
   _debug(debug, `Found ${results.length} results for ${key}=${val}`)
-  if (results.length !== 0) {
+
+  // if there is a result, return it
+  if (results.length > 0) {
     return results[0]
-  } else if (throwENOENT) {
+  }
+
+  if (throwENOENT) {
     const error = new Error(`No ${ParseClass.className} called ${val}, or you don't have permission.`)
     error.userError = true
     throw error

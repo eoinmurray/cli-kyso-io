@@ -4,7 +4,8 @@ const unique = require('array-unique')
 const ignore = require('ignore')
 const _glob = require('glob')
 const { stat, readdir, readFile } = require('fs-promise')
-
+const _debug = require('./output/debug')
+const chalk = require('chalk')
 // Base `.gitignore` to which we add entries
 // supplied by the user
 const IGNORED = `.hg
@@ -134,15 +135,13 @@ async function getFiles(path, pkg, { limit = null, debug = false } = {}) {
         return true
       }
       const accepted = filter(relativePath)
-      if (!accepted && debug) {
-        console.log('> [debug] ignoring "%s"', file)
-      }
+      _debug(!accepted && debug, `ignoring ${file}`)
       return accepted
     }
 
   // Locate files
   if (debug) {
-    console.time(`> [debug] locating files ${path}`)
+    console.time(`${chalk.gray('[debug]')} locating files ${path}`)
   }
 
   const files = await explode(search, {
@@ -152,7 +151,7 @@ async function getFiles(path, pkg, { limit = null, debug = false } = {}) {
   })
 
   if (debug) {
-    console.timeEnd(`> [debug] locating files ${path}`)
+    console.timeEnd(`${chalk.gray('[debug]')} locating files ${path}`)
   }
 
   files.push(asAbsolute('study.json', path))
@@ -194,9 +193,7 @@ async function explode(paths, { accepts, debug }) {
       try {
         s = await stat(path)
       } catch (e2) {
-        if (debug) {
-          console.log('> [debug] ignoring invalid file "%s"', file)
-        }
+        _debug(debug, `ignoring invalid file ${file}`)
         return null
       }
     }
@@ -207,9 +204,7 @@ async function explode(paths, { accepts, debug }) {
       return many(all.map(subdir => asAbsolute(subdir, file)))
       /* eslint-enable no-use-before-define */
     } else if (!s.isFile()) {
-      if (debug) {
-        console.log('> [debug] ignoring special file "%s"', file)
-      }
+      _debug(debug, `ignoring special file ${file}`)
       return null
     }
 
