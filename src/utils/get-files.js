@@ -15,6 +15,7 @@ const IGNORED = `.hg
 .npmignore
 .dockerignore
 .gitignore
+.ipynb-checkpoints
 .*.swp
 .DS_Store
 .wafpicke-*
@@ -90,6 +91,7 @@ const asAbsolute = (path, parent) => {
  */
 
 async function getFiles(path, pkg, { limit = null, debug = false } = {}) {
+  pkg = pkg || {} // eslint-disable-line
   const whitelist = pkg.files
 
   // The package.json `files` whitelist still

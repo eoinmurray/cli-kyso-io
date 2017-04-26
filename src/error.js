@@ -22,7 +22,7 @@ function handleError(err) {
     return error('Unexpected server error. Please retry.')
   }
 
-  return error(`Unexpected error. (${err.message})\n${err.stack}`)
+  return error(`Unexpected error. (${err.message})`)
 }
 
 module.exports = {

@@ -19,13 +19,13 @@ const help = () => {
 
   ${chalk.dim('Examples:')}
 
-  ${chalk.gray('–')} Lists all your teams:
+  ${chalk.gray('–')} List all your teams:
       ${chalk.cyan('$ kyso teams ls')}
 
-  ${chalk.gray('–')} Creates a team:
+  ${chalk.gray('–')} Create a team:
       ${chalk.cyan(`$ kyso teams create ${chalk.underline('my-team-name')}`)}
 
-  ${chalk.gray('–')} Removing a team:
+  ${chalk.gray('–')} Remove a team:
       ${chalk.cyan('$ kyso teams rm my-team-name')}
 `
   )

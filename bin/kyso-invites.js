@@ -14,21 +14,19 @@ const help = () => {
     `
   ${chalk.bold('kyso invites')} <ls | add | rm>
 
-    ${chalk.gray('-')} Invite someone to a team you administer.
-
   ${chalk.dim('Options:')}
     -h, --help              Output usage information
     -d, --debug             Debug mode [off]
 
   ${chalk.dim('Examples:')}
 
-  ${chalk.gray('–')} Lists all your invites:
+  ${chalk.gray('–')} List all your invites:
       ${chalk.cyan('$ kyso invites ls')}
 
-  ${chalk.gray('–')} Invites someone to a team:
+  ${chalk.gray('–')} Invite someone to a team:
       ${chalk.cyan(`$ kyso invites add ${chalk.underline('user@email.com')} ${chalk.underline('my-team')}`)}
 
-  ${chalk.gray('–')} Removing an invite:
+  ${chalk.gray('–')} Remove an invite:
       ${chalk.cyan(`$ kyso invites rm ${chalk.underline('user@email.com')}`)}
 `
   )

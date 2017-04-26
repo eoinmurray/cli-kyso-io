@@ -15,16 +15,17 @@ const help = async () => {
 
   ${chalk.dim('Options:')}
     -h, --help              Output usage information
+    -d, --debug             Debug mode [off]
 
   ${chalk.dim('Examples:')}
 
-  ${chalk.gray('–')} Lists all your tags:
+  ${chalk.gray('–')} List all tags in the current study:
       ${chalk.cyan('$ kyso tags ls')}
 
-  ${chalk.gray('–')} Creates a tag:
+  ${chalk.gray('–')} Create a tag:
       ${chalk.cyan(`$ kyso tags add ${chalk.underline('my-tag-name')}`)}
 
-  ${chalk.gray('–')} Removing a tag:
+  ${chalk.gray('–')} Remove a tag:
       ${chalk.cyan('$ kyso tags rm my-tag-name')}
 `
   )

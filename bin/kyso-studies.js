@@ -15,17 +15,21 @@ const help = async () => {
 
   ${chalk.dim('Options:')}
     -h, --help              Output usage information
+    -d, --debug             Debug mode [off]
 
   ${chalk.dim('Examples:')}
 
-  ${chalk.gray('–')} Lists all your studies:
+  ${chalk.gray('–')} List all your studies:
       ${chalk.cyan('$ kyso studies ls')}
 
-  ${chalk.gray('–')} Creates a study:
-      ${chalk.cyan(`$ kyso studies create ${chalk.underline('my-study-name')}`)}
+  ${chalk.gray('–')} Create a study:
+      ${chalk.cyan(`$ kyso studies create ${chalk.underline('studyname')}`)}
 
-  ${chalk.gray('–')} Removing a study:
-      ${chalk.cyan('$ kyso studies rm my-study-name')}
+  ${chalk.gray('–')} Create a study on a team account:
+      ${chalk.cyan(`$ kyso studies create ${chalk.underline('teamname/studyname')}`)}
+
+  ${chalk.gray('–')} Remove a study:
+      ${chalk.cyan('$ kyso studies rm studyname')}
 `
   )
 }
@@ -47,7 +51,7 @@ const ls = async (kyso, args) => {
     out = table(header.concat(
         studyList.map(t => {
           const time = chalk.gray(`${ms(current - new Date(t.createdAt))} ago`)
-          return ['', `${t.get('author')}/${t.get('name')}`, time]
+          return ['', `${t.get('name')}`, time]
         })
       ), {
         align: ['l', 'l', 'l'],
@@ -110,8 +114,15 @@ const create = async (kyso, args) => {
 
   const start = new Date()
   const name = String(args[0])
-  const dir = process.cwd()
-  const studyMade = await kyso.createStudy(name, dir)
+
+  let teamName = null
+  let studyName = name
+  if (name.includes('/')) {
+    teamName = name.split('/')[0]
+    studyName = name.split('/')[1]
+  }
+
+  const studyMade = await kyso.createStudy(studyName, teamName)
   const elapsed = ms(new Date() - start)
 
   if (studyMade) {

@@ -31,16 +31,19 @@ const commands = new Set([
   defaultCommand,
   'help',
   'login',
+  'studies',
+  'versions',
   'teams',
   'invites',
-  'studies',
   'tags',
   'run',
   'clone',
-  'versions',
+  'checkout',
+  'merge',
+
+  // must list aliases too
   'create'
 ])
-
 
 // here we can define aliases for the commands
 // ie 'ls' would match 'list'

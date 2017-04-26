@@ -6,7 +6,11 @@ module.exports = async (val, ParseClass, _token, { key = 'name', throwENOENT = f
   const query = new Parse.Query(ParseClass)
 
   _debug(debug, `Querying ${ParseClass.className} for ${key}=${val}`)
-  query.equalTo(key, val)
+  if (key !== 'sha') {
+    query.equalTo(key, val)
+  } else {
+    query.startsWith(key, val)
+  }
 
   const results = await query.find({ sessionToken: _token })
 

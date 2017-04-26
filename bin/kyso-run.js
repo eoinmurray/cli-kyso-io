@@ -13,6 +13,32 @@ const help = async () => {
 
   ${chalk.dim('Options:')}
     -h, --help              Output usage information
+    -d, --debug             Debug mode [off]
+
+  Runs a script defined in "scripts" in the study.json
+
+  ${chalk.dim('Examples:')}
+
+    ${chalk.gray('– Starting a Jupyter notebook:')}
+
+      If you have the following script in the study.json
+
+      "scripts": {
+        "start": "jupyter notebook"
+      }
+
+      ${chalk.cyan('$ kyso run start')} would start the notebook server
+
+    ${chalk.gray('– Passing extra arguments:')} 
+
+      If you have the following script in the study.json
+
+      "scripts": {
+        "say": "echo"
+      }
+
+      ${chalk.cyan('$ kyso run say -- hello world')} would print "hello world"
+
 `
   )
 }

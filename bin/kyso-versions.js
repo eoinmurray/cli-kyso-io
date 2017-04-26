@@ -10,7 +10,6 @@ const strlen = require('../src/strlen')
 const exit = require('../src/utils/exit')
 const Kyso = require('../src')
 
-
 const help = async () => {
   console.log(
     `
@@ -18,34 +17,41 @@ const help = async () => {
 
   ${chalk.dim('Options:')}
     -h, --help              Output usage information
+    -d, --debug             Debug mode [off]
 
   ${chalk.dim('Examples:')}
 
-  ${chalk.gray('–')} Lists all your versions:
+  ${chalk.gray('–')} List all versions of the current study:
       ${chalk.cyan('$ kyso versions ls')}
 
-  ${chalk.gray('–')} Creates a version:
+  ${chalk.gray('–')} List all versions of a named study:
+      ${chalk.cyan('$ kyso versions ls my-study')}
+
+  ${chalk.gray('–')} Create a version:
       ${chalk.cyan(`$ kyso versions create ${chalk.underline('"a commit message"')}`)}
 
-  ${chalk.gray('–')} Removing a version:
-      ${chalk.cyan('$ kyso versions rm <version>')}
+  ${chalk.gray('–')} Remove a version:
+      ${chalk.cyan('$ kyso versions rm <version-sha>')}
 `
   )
 }
 
 const ls = async (kyso, args) => {
-  if (args.length !== 0) {
-    error('Invalid number of arguments')
-    return exit(1)
+  let studyName = null
+  if (args.length === 1) {
+    studyName = String(args[0])
+    if (studyName.includes('/')) {
+      studyName = studyName.split('/')[1]
+    }
   }
 
   const start_ = new Date()
-  const versionList = await kyso.lsVersions()
+  const versionList = await kyso.lsVersions({ studyName })
   versionList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
   const current = new Date()
   const header = [
-    ['created', 'version (6-digits)', 'message'].map(s => chalk.dim(s))
+    ['', 'created', 'version (6-digits)', 'message'].map(s => chalk.dim(s))
   ]
 
   let out = null
@@ -53,7 +59,13 @@ const ls = async (kyso, args) => {
     out = table(header.concat(
         versionList.map(t => {
           const time = chalk.gray(`${ms(current - new Date(t.createdAt))} ago`)
-          return [time, t.get('sha').slice(0, 6), t.get('message')]
+
+          let star = ''
+          if (kyso.pkg && t.get('sha') === kyso.pkg.version) {
+            star = '✔'
+          }
+
+          return [star, time, t.get('sha').slice(0, 6), t.get('message')]
         })
       ), {
         align: ['l', 'l', 'l', 'l', 'l', 'l'],
@@ -113,7 +125,7 @@ const rm = async (kyso, args) => {
   await kyso.rmVersion(_version)
   const elapsed = ms(new Date() - start)
   console.log(
-    `${chalk.cyan('> Success!')} Version ${chalk.bold(_version.get('name'))} removed [${elapsed}]`
+    `${chalk.cyan('> Success!')} Version ${chalk.bold(_version.get('sha').slice(0, 6))} removed [${elapsed}]`
   )
   return true
 }

@@ -1,12 +1,8 @@
 #!/usr/bin/env node
 const chalk = require('chalk')
-const table = require('text-table')
 const ms = require('ms')
-const { eraseLines } = require('ansi-escapes')
-const promptBool = require('../src/utils/input/prompt-bool')
 const getCommandArgs = require('../src/command-args')
 const { error, handleError } = require('../src/error')
-const strlen = require('../src/strlen')
 const exit = require('../src/utils/exit')
 const Kyso = require('../src')
 
@@ -14,21 +10,21 @@ const Kyso = require('../src')
 const help = async () => {
   console.log(
     `
-  ${chalk.bold('kyso versions')} <ls | create | rm> <versionname>
+  ${chalk.bold('kyso clone')} author/studyname
 
   ${chalk.dim('Options:')}
     -h, --help              Output usage information
 
   ${chalk.dim('Examples:')}
 
-  ${chalk.gray('–')} Lists all your versions:
-      ${chalk.cyan('$ kyso versions ls')}
+  ${chalk.gray('–')} Clone latest version of a users study:
+      ${chalk.cyan('$ kyso clone username/studyname')}
 
-  ${chalk.gray('–')} Creates a version:
-      ${chalk.cyan(`$ kyso versions create ${chalk.underline('"a commit message"')}`)}
+  ${chalk.gray('–')} Clone latest version of a teams study:
+      ${chalk.cyan('$ kyso clone team/studyname')}
 
-  ${chalk.gray('–')} Removing a version:
-      ${chalk.cyan('$ kyso versions rm <version>')}
+  ${chalk.gray('–')} Clone a specific version:
+      ${chalk.cyan('$ kyso clone username/studyname#d46hdv')}
 `
   )
 }
@@ -39,10 +35,14 @@ const clone = async (kyso, args) => {
     return exit(1)
   }
 
-  const name = String(args)
+  const name = String(args[0])
+  let target = null
+  if (args.length === 2) {
+    target = String(args[1])
+  }
 
   if (!name.includes('/')) {
-    const err = new Error(`Study "${name}" does not exist`)
+    const err = new Error(`Study name must be in the form author/name`)
     err.userError = true
     throw err
   }
@@ -64,8 +64,8 @@ const clone = async (kyso, args) => {
 
   const start_ = new Date()
 
-  console.log(`Cloning into ${studyName}`)
-  await kyso.clone(studyName, teamName, versionSha)
+  console.log(`Cloning into ${target || studyName}`)
+  await kyso.clone(studyName, teamName, { versionSha, target })
   const elapsed_ = ms(new Date() - start_)
   console.log(`> Cloned study ${chalk.gray(`[${elapsed_}]`)}`)
   return true
@@ -73,7 +73,7 @@ const clone = async (kyso, args) => {
 
 (async () => {
   try {
-    const { argv, subcommand, token, apiUrl } = await getCommandArgs()
+    const { argv, args, subcommand, token, apiUrl } = await getCommandArgs()
     if (argv.help || !subcommand) {
       help()
       return exit(0)
@@ -86,7 +86,7 @@ const clone = async (kyso, args) => {
       dir: process.cwd()
     })
 
-    return await clone(kyso, subcommand)
+    return await clone(kyso, [subcommand].concat(args))
   } catch (err) {
     return handleError(err)
   }

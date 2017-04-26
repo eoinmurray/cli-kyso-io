@@ -1,5 +1,4 @@
 const { createHash } = require('crypto')
-const path = require('path')
 const { readFile } = require('fs-promise')
 const _debug = require('./output/debug')
 /**
@@ -9,21 +8,12 @@ const _debug = require('./output/debug')
   * @return {Map}
   */
 
-const hashes = async (files, isStatic, pkg) => {
+const hashes = async (files) => {
   const map = new Map()
 
   await Promise.all(
     files.map(async name => {
-      const filename = path.basename(name)
-      let data
-
-      if (isStatic && filename === 'package.json') {
-        const packageString = JSON.stringify(pkg, null, 2)
-        data = Buffer.from(packageString)
-      } else {
-        data = await readFile(name)
-      }
-
+      const data = await readFile(name)
       const h = hash(data)
       const entry = map.get(h)
       if (entry) {
@@ -45,6 +35,8 @@ const hashes = async (files, isStatic, pkg) => {
 
 const hash = (buf) => createHash('sha1').update(buf).digest('hex')
 
+const fileMapHash = (sha, name) => createHash('sha1').update(sha).update(name).digest('hex')
+
 const versionHash = (hashList, message, { debug = false } = {}) => {
   // must add header which contains file names and message
 
@@ -63,12 +55,9 @@ const versionHash = (hashList, message, { debug = false } = {}) => {
   const headerBuffer = Buffer.from(header)
   const buf = Buffer.concat(dataBufferList.concat(headerBuffer))
   const finalSha = createHash('sha1').update(buf).digest('hex')
-  // _debug(debug, `Sha no header: ${createHash('sha1').update(Buffer.concat(dataBufferList)).digest('hex')}`)
-  // _debug(debug, `Sha of header: ${createHash('sha1').update(Buffer.concat([headerBuffer])).digest('hex')}`)
-  // _debug(debug, `Sha with header: ${finalSha}`)
-
   return finalSha
 }
 
 exports.hash = hashes
 exports.versionHash = versionHash
+exports.fileMapHash = fileMapHash

@@ -2,3 +2,6 @@ node_modules/
 logs/
 Icon^M
 .DS_Store
+Icon?
+Icon
+.ipynb_checkpoints
