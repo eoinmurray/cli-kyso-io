@@ -17,6 +17,10 @@ const help = async () => {
   ${chalk.dim('Options:')}
     -h, --help              Output usage information
 
+  To merge Jupyter notebooks you will need to first install 'nbdime'
+
+    ${chalk.underline(`pip install nbdime`)}
+
   ${chalk.dim('To merge a fork:')}
 
     ${chalk.gray(`1.`)} ${chalk.cyan(`$ kyso merge pull ${chalk.underline(`username/forked-study#version-sha`)}`)}

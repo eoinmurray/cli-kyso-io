@@ -6,14 +6,20 @@
     "kyso": "./bin/kyso.js"
   },
   "scripts": {
-    "link": "npm link",
-    "dev": "ech"
+    "test": "ava"
+  },
+  "ava": {
+    "failFast": true,
+    "files": [
+      "test/*.js"
+    ]
   },
   "repository": "eoinmurray/cli-kyso-io",
   "author": "eoinmurray <eoin@kyso.io>",
   "license": "MIT",
   "dependencies": {
     "ansi-escapes": "^1.4.0",
+    "ava": "^0.19.1",
     "arr-flatten": "^1.0.3",
     "array-unique": "^0.3.2",
     "auth0": "^2.6.0",
@@ -37,7 +43,6 @@
     "chalk": "^1.1.3",
     "child-process-promise": "^2.2.1",
     "commander": "^2.9.0",
-    "diff": "^3.2.0",
     "email-prompt": "^0.2.0",
     "email-validator": "^1.0.7",
     "fs-promise": "^2.0.2",
