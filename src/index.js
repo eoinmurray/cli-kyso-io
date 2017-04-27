@@ -1,6 +1,5 @@
 const path = require('path')
 const Parse = require('parse/node')
-const fs = require('fs-promise')
 const cfg = require('../src/cfg')
 const secrets = require('./secrets')
 const clone = require('./clone')
@@ -248,10 +247,10 @@ module.exports = class Kyso {
   async applyMerge() {
     const target = path.join('.merge', `target`)
     const base = path.join('.merge', `base`)
-    return merge(process.cwd(), target, base, { debug: this.debug })
+    return merge(target, process.cwd(), base, { debug: this.debug })
   }
 
   async lsConflicts(dest) {
-    return lsConflicts(dest, path.resolve('.merge', 'target'), { debug: this.debug })
+    return lsConflicts(path.resolve('.merge', 'target'), dest, { debug: this.debug })
   }
 }

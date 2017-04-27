@@ -17,16 +17,24 @@ const help = async () => {
   ${chalk.dim('Options:')}
     -h, --help              Output usage information
 
-  ${chalk.dim('Examples:')}
+  ${chalk.dim('To merge a fork:')}
 
-  ${chalk.gray('–')} Merge a fork:
-      ${chalk.cyan('$ kyso merge username/forked-study')}
+    ${chalk.gray(`1.`)} ${chalk.cyan(`$ kyso merge pull ${chalk.underline(`username/forked-study#version-sha`)}`)}
 
-  ${chalk.gray('–')} List the current conflicts:
-      ${chalk.cyan(`$ kyso merge ls`)}
+      Pull the merge. This will create a .merge folder with the merge content.
+      If the version-sha is not given, the latest will be pulled.
 
-  ${chalk.gray('–')} Resolve Jupyter notebook conflict:
-      ${chalk.cyan('$ kyso merge resolve <file>')}
+    ${chalk.gray(`2.`)} ${chalk.cyan(`$ kyso merge ls`)}
+
+      This will list all the potential conflicts in the merge
+
+    ${chalk.gray(`3.`)} ${chalk.cyan(`$ kyso merge apply`)}
+
+      This will do a 3-way merge of all files (including intelligent merging of Jupyter notebooks)
+
+    ${chalk.gray(`4.`)} ${chalk.cyan(`$ kyso merge ls`)}
+
+      This will list the actual conflicts resulting from the merge
 `
   )
 }

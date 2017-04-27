@@ -54,6 +54,7 @@
     "parse": "^1.9.2",
     "pify": "^2.3.0",
     "querystring": "^0.2.0",
+    "rimraf": "^2.6.1",
     "simple-git": "^1.70.0",
     "slide": "^1.1.6",
     "text-table": "^0.2.0",
