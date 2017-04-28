@@ -4,8 +4,9 @@ const { validate } = require('email-validator')
 const { getUser } = require('./rest-request')
 const readEmail = require('email-prompt')
 const secrets = require('./secrets')
-const cfg = require('./cfg')
+const cfg = require('./kyso-cfg')
 const ua = require('./ua')
+const wait = require('../src/utils/output/wait')
 // const info = require('./utils/output/info')
 // const promptBool = require('./utils/input/prompt-bool')
 const textInput = require('./utils/input/text')
@@ -108,23 +109,24 @@ async function register({ retryEmail = false } = {}) {
 
   if (!validate(email)) { return register({ retryEmail: true }) }
 
+  let s = wait(`Sending verification email`)
   await requestPasswordlessLogin(email)
+  s()
 
   console.log(`> We have sent a verification code to ${chalk.bold(email)}.`)
   console.log('> Please enter the code to login.')
-  process.stdout.write('\n')
 
   const code = await textInput({ label: '- Code: ' })
 
-  console.log('> Logging you in.')
 
-  // do something here to retrieve and check email
+  s = wait(`Checking verification`)
   const { access_token } = await verifyCode(email, code)
+  s(); s = wait(`Retrieving auth details`)
   const { parse_session_token } = await getAuth0Profile(email, access_token)
+  s(); s = wait(`Retrieving user token`)
   const user = await getUser(parse_session_token)
   // const { sessionToken } = await getRestrictedSession(parse_session_token)
-
-  process.stdout.write('\n')
+  s()
 
   return {
     email,
@@ -134,7 +136,7 @@ async function register({ retryEmail = false } = {}) {
   }
 }
 
-module.exports = async function () {
+module.exports = async () => {
   const loginData = await register()
 
   cfg.merge(loginData)

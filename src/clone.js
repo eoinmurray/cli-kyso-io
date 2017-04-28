@@ -4,16 +4,29 @@ const path = require('path')
 const pify = require('pify')
 const mkdirp = require('mkdirp')
 const _debug = require('./utils/output/debug')
+const wait = require('./utils/output/wait')
 const { fileMapHash } = require('./utils/hash')
 
 const download = async (url, dest) => new Promise(async (resolve, reject) => { // eslint-disable-line
   await pify(mkdirp)(path.dirname(dest))
   const file = fs.createWriteStream(dest)
+
+  const st = wait(`Downloading ${path.basename(dest)}`, 'bouncingBar')
+
   https
     .get(url, (response) => {
       response.pipe(file)
-      file.on('finish', () => { file.close(); resolve(dest); })
-      .on('error', (err) => { fs.unlink(dest); reject(err); }) // eslint-disable-line
+      file
+        .on('finish', () => {
+          file.close()
+          st(true)
+          resolve(dest)
+        })
+        .on('error', (err) => {
+          fs.unlink(dest)
+          st(true)
+          reject(err)
+        })
     })
 })
 
@@ -22,7 +35,7 @@ module.exports = async (study, version, files, wd, { target = null, debug = fals
   try {
     await fs.stat(studyDir)
     if (throwExists) {
-      const e = new Error(`Directory ${study.get('name')} already exists.`)
+      const e = new Error(`Directory ${studyDir} already exists.`)
       e.userError = true
       throw e
     } else {
@@ -38,12 +51,15 @@ module.exports = async (study, version, files, wd, { target = null, debug = fals
   await pify(mkdirp)(studyDir)
   await Promise.all(files.map(async (file) => {
     const mapSha = fileMapHash(file.get('sha'), file.get('name'))
+
     const dest = path.join(studyDir, fileMap[mapSha])
     if (!file.get('file')) {
       return fs.writeFile(dest, '')
     }
     if (file.get('name') === 'study.json') {
-      return fs.writeFile(dest, JSON.stringify(version.get('pkg'), null, 3))
+      const st = wait(`Writing study.json`, 'bouncingBar')
+      await fs.writeFile(dest, JSON.stringify(version.get('pkg'), null, 3))
+      return st(true)
     }
 
     _debug(debug, `Downloading ${file.get('name')} into ${dest}`)

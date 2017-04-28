@@ -44,7 +44,7 @@ const merge = async (src, target, base, { debug = null, canDelete = true } = {})
 
   // delete the merge folder to signify that we are done
   if (canDelete) {
-    await pify(rimraf)(path.resolve('.merge'))
+    await pify(rimraf)(path.resolve('.kyso', 'merge'))
   }
   return conflicts
 }

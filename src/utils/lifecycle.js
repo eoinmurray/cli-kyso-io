@@ -58,7 +58,7 @@ const lifecycle_ = async (pkg, cmd, wd, env, unsafe) => {
     // define this here so it's available to all scripts.
     env.kyso_lifecycle_script = pkg.scripts[cmd] // eslint-disable-line
   } else {
-    console.log('lifecycle', logid(pkg, cmd), `no script for ${cmd}, continuing`)
+    // console.log('lifecycle', logid(pkg, cmd), `no script for ${cmd}, continuing`)
   }
 
   if (packageLifecycle) {

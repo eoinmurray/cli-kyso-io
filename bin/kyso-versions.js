@@ -7,13 +7,14 @@ const promptBool = require('../src/utils/input/prompt-bool')
 const getCommandArgs = require('../src/command-args')
 const { error, handleError } = require('../src/error')
 const strlen = require('../src/strlen')
-const exit = require('../src/utils/exit')
 const Kyso = require('../src')
+const exit = require('../src/utils/exit')
+const wait = require('../src/utils/output/wait')
 
 const help = async () => {
   console.log(
     `
-  ${chalk.bold('kyso versions')} <ls | create | rm> <versionname>
+  ${chalk.bold('kyso versions')} <ls | create | rm | status>
 
   ${chalk.dim('Options:')}
     -h, --help              Output usage information
@@ -32,6 +33,9 @@ const help = async () => {
 
   ${chalk.gray('–')} Remove a version:
       ${chalk.cyan('$ kyso versions rm <version-sha>')}
+
+  ${chalk.gray('–')} List current version and file changes:
+      ${chalk.cyan('$ kyso versions status')}
 `
   )
 }
@@ -46,12 +50,14 @@ const ls = async (kyso, args) => {
   }
 
   const start_ = new Date()
+  const st = wait(`Fetching versions`)
   const versionList = await kyso.lsVersions({ studyName })
+  st()
   versionList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
   const current = new Date()
   const header = [
-    ['', 'created', 'version (6-digits)', 'message'].map(s => chalk.dim(s))
+    ['current', 'created', 'version (6-digits)', 'message'].map(s => chalk.dim(s))
   ]
 
   let out = null
@@ -61,14 +67,14 @@ const ls = async (kyso, args) => {
           const time = chalk.gray(`${ms(current - new Date(t.createdAt))} ago`)
 
           let star = ''
-          if (kyso.pkg && t.get('sha') === kyso.pkg.version) {
+          if (kyso.pkg && t.get('sha') === kyso.pkg._version) {
             star = '✔'
           }
 
           return [star, time, t.get('sha').slice(0, 6), t.get('message')]
         })
       ), {
-        align: ['l', 'l', 'l', 'l', 'l', 'l'],
+        align: ['r', 'l', 'l', 'l', 'l', 'l'],
         hsep: ' '.repeat(2),
         stringLength: strlen
       }
@@ -94,7 +100,9 @@ const rm = async (kyso, args) => {
     throw err
   }
 
+  const st = wait(`Fetching version`)
   const versionList = await kyso.lsVersions()
+  st()
   const _version = versionList.find(d => (d.get('sha').slice(0, 6) === _target))
 
   if (!_version) {
@@ -155,6 +163,52 @@ const create = async (kyso, args) => {
   }
 }
 
+const status = async (kyso) => {
+  const start = new Date()
+  const dir = process.cwd()
+
+  const {
+    version,
+    isDirty,
+    added,
+    currentSha,
+    removed,
+    unchanged,
+    modified
+  } = await kyso.currentVersion(dir)
+
+  if (isDirty) {
+    let out = null
+    const opts = { align: ['l', 'l', 'l'], hsep: ' '.repeat(1), stringLength: strlen }
+    let all = []
+    if (added.length !== 0) {
+      all = all.concat([['', chalk.dim('> Added'), '', '']], added.map(d => ['', '', d.name, d.sha]))
+    }
+    if (removed.length !== 0) {
+      all = all.concat([['', chalk.dim('> Removed'), '', '']], removed.map(d => ['', '', d.name, d.sha]))
+    }
+    if (unchanged.length !== 0) {
+      all = all.concat([['', chalk.dim('> Unchanged'), '', '']], unchanged.map(d => ['', '', d.name, d.sha]))
+    }
+    if (modified.length !== 0) {
+      all = all.concat([['', chalk.dim('> Modified'), '', '']], modified.map(d => ['', '', d.name, d.sha]))
+    }
+
+    out = table(all, opts)
+    console.log(`\n${out}\n`)
+  }
+
+  const elapsed = ms(new Date() - start)
+
+  if (isDirty) {
+    console.log(`Last version was ${chalk.bold(version.get('sha'))} but files have changed.`)
+    console.log(`Current hash is  ${chalk.bold(currentSha)} [${elapsed}]`)
+  } else {
+    console.log(`Current version is ${chalk.underline(version.get('sha'))}. No changes [${elapsed}]`)
+  }
+}
+
+
 (async () => {
   try {
     const { args, argv, subcommand, token, apiUrl } = await getCommandArgs()
@@ -181,6 +235,10 @@ const create = async (kyso, args) => {
 
     if (subcommand === 'create') {
       return await create(kyso, args)
+    }
+
+    if (subcommand === 'status') {
+      return await status(kyso)
     }
 
     error('Please specify a valid subcommand: ls | create | rm | help')

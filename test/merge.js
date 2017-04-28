@@ -10,8 +10,8 @@ const debug = false
 
 test('`correctly reports conflicts`', async t => {
   const target = fixture(`merge`)
-  const src = join(fixture(`merge`), '.merge', 'target')
-  const base = join(fixture(`merge`), '.merge', 'base')
+  const src = join(fixture(`merge`), '.kyso', 'merge', 'target')
+  const base = join(fixture(`merge`), '.kyso', 'merge', 'base')
 
   const conflicts = await merge(src, target, base, { debug, canDelete: false })
   const names = conflicts.map(c => c.name)

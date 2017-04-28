@@ -7,7 +7,7 @@ const strlen = require('../src/strlen')
 const { error, handleError } = require('../src/error')
 const Kyso = require('../src')
 const exit = require('../src/utils/exit')
-
+const wait = require('../src/utils/output/wait')
 
 const help = () => {
   console.log(
@@ -39,7 +39,9 @@ const ls = async (kyso, args) => {
   }
 
   const start_ = new Date()
+  const st = wait(`Fetching invites`)
   const inviteList = await kyso.lsInvites()
+  st()
 
   inviteList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
   const current = new Date()
@@ -80,7 +82,9 @@ const rm = async (kyso, args) => {
     throw err
   }
 
+  const st = wait(`Fetching invite`)
   const inviteList = await kyso.lsInvites()
+  st()
   const _invite = inviteList.find(d => (d.get('name') === _target))
 
   if (!_invite) {
@@ -112,8 +116,9 @@ const add = async (kyso, args) => {
   const start = new Date()
   const targetEmail = String(args[0])
   const teamName = String(args[1])
-  console.log(`Adding ${chalk.bold(chalk.underline(targetEmail))} to ${chalk.bold(chalk.underline(teamName))}`)
+  const st = wait(`Adding ${chalk.bold(chalk.underline(targetEmail))} to ${chalk.bold(chalk.underline(teamName))}`)
   const invite = await kyso.createInvite(targetEmail, teamName)
+  st()
   const elapsed = ms(new Date() - start)
 
   if (invite) {

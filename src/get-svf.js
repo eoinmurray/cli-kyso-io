@@ -16,6 +16,7 @@ module.exports = async (studyName, author, token, { versionSha = null, debug = n
     throw error
   }
 
+  _debug(debug, `Got ${author}/${studyName}`)
   const study = results[0]
 
   const versionsQuery = study.relation('versions').query()

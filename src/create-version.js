@@ -3,10 +3,11 @@ const lifecycle = require('./utils/lifecycle')
 const { fileMapHash } = require('./utils/hash')
 const findOne = require('./utils/find-one')
 const { getFileList } = require('./utils/get-file-map')
+const { versionHash } = require('./utils/hash')
 const getGit = require('./utils/get-git')
 const resolveMain = require('./utils/resolve-main')
-const { versionHash } = require('./utils/hash')
 const _debug = require('./utils/output/debug')
+const wait = require('./utils/output/wait')
 
 const Version = Parse.Object.extend('Version')
 const Study = Parse.Object.extend('Study')
@@ -18,9 +19,12 @@ const createVersion = async (pkg, dir, token, message, { debug = false } = {}) =
 
   // get the study from server if it exists, throwENOENT if not
   // then make relation to add version too
+  let s = wait(`Fetching study details`)
   const study = await findOne(pkg.name, Study, token, { throwENOENT: true })
   const studyVersions = study.relation('versions')
+  s()
 
+  s = wait(`Initializing version`)
   // create a new version and files relation
   const version = new Version()
   version.set('message', message)
@@ -41,9 +45,14 @@ const createVersion = async (pkg, dir, token, message, { debug = false } = {}) =
   const main = await resolveMain(files, pkg)
   version.set('main', main)
   // TODO: create version hash
+  s()
 
+  s = wait(`Hashing files`)
   const versionSha = versionHash(files, message, { debug })
+  s()
+  s = wait(`Creating unique version`)
   const existingVersion = await findOne(versionSha, Version, token, { key: 'sha', debug })
+  s()
 
   if (existingVersion) {
     const err = new Error(`
@@ -65,6 +74,7 @@ message: ${existingVersion.get('message')}`)
   await Promise.all(
     Array.from(files).map(async ({ sha, size, file, data }) => {
       // if file exists add it to the version, otherwise upload and make new file
+      const st = wait(`Uploading ${file} (size ${size})`, 'bouncingBar')
       let fileObj = await findOne(sha, File, token, { key: 'sha' })
       _debug(debug && fileObj, `Referencing ${file} (size ${size})`)
       if (!fileObj) {
@@ -78,25 +88,27 @@ message: ${existingVersion.get('message')}`)
         fileObj = new File()
         await fileObj.save({ file: _upload, name: file, size, sha, author: pkg.author }, { sessionToken: token }) // eslint-disable-line
       }
+      st(true)
       versionFiles.add(fileObj)
 
       const mapSha = fileMapHash(sha, file)
       fileMap[mapSha] = file
     })
   )
-
   // if everything good, then save version and study, add version to study
   // fileMap is an object with all the sha's and relative file paths
   version.set('fileMap', fileMap)
   version.set('author', pkg.author)
-  _debug(debug, `Saving version.`)
+  s = wait(`Saving version`)
   await version.save(null, { sessionToken: token })
   _debug(debug, `Adding version to study.`)
   studyVersions.add(version)
+  s()
+  s = wait(`Saving study`)
   await study.save(null, { sessionToken: token })
-
+  s()
   await lifecycle(pkg, 'postversion', dir, true)
-  return true
+  return version
 }
 
 

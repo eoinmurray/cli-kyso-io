@@ -42,12 +42,14 @@ const versionHash = (hashList, message, { debug = false } = {}) => {
 
   const filenames = hashList
     .map(h => h.file)
+    .filter(h => h !== 'study.json')
     .sort()
 
   const header = `${filenames.join(',')}`
   _debug(debug, `Version has header: ${header}`)
 
   const dataBufferList = hashList
+    .filter(h => h.file !== 'study.json')
     .map(h => h.sha)
     .sort() // <- NB since we need to versionHash to be the same every time
     .map(h => Buffer.from(h))

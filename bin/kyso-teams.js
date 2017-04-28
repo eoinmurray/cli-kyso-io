@@ -6,6 +6,7 @@ const strlen = require('../src/strlen')
 const { error, handleError } = require('../src/error')
 const Kyso = require('../src')
 const exit = require('../src/utils/exit')
+const wait = require('../src/utils/output/wait')
 const getCommandArgs = require('../src/command-args')
 
 const help = () => {
@@ -38,7 +39,9 @@ const ls = async (kyso, args) => {
   }
 
   const start_ = new Date()
+  const st = wait(`Fetching your teams`)
   const teamList = await kyso.lsTeams()
+  st()
   teamList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
   const current = new Date()
@@ -80,7 +83,9 @@ const rm = async (kyso, args) => {
     throw err
   }
 
+  const st = wait(`Fetching team`)
   const teamList = await kyso.lsTeams()
+  st()
   const _team = teamList.find(d => d.get('name') === _target)
 
   if (!_team) {
@@ -116,7 +121,9 @@ const create = async (kyso, args) => {
 
   const start = new Date()
   const name = String(args[0])
+  const st = wait(`Creating team`)
   const team = await kyso.createTeam(name)
+  st()
 
   if (kyso.debug) {
     console.log('[debug] Saved team.')

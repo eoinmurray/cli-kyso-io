@@ -3,8 +3,9 @@ const Parse = require('parse/node')
 
 const getCommonVersion = require('./latest-common-version')
 const createVersion = require('./create-version')
-const { merge, lsConflicts } = require('./merge')
 const createStudy = require('./create-study')
+const currentVersion = require('./current-version')
+const { merge, lsConflicts } = require('./merge')
 const studyJSON = require('./get-study-json')
 const getSVF = require('./get-svf')
 const clone = require('./clone')
@@ -14,6 +15,7 @@ const cfg = require('./kyso-cfg')
 const lifecycle = require('./utils/lifecycle')
 const findOne = require('./utils/find-one')
 const _debug = require('./utils/output/debug')
+const wait = require('./utils/output/wait')
 
 Parse.initialize(secrets.PARSE_APP_ID)
 const Study = Parse.Object.extend('Study')
@@ -39,15 +41,12 @@ module.exports = class Kyso {
   async createStudy(studyName, teamName = null) {
     let author = cfg.read().nickname
     // can specify the study author as username/studyname or teamname/studyname
-    // lets abort if there is already a study.json
-    if (this.hasStudyJson && studyName === this.pkg.name) {
-      return console.log(`Reinitialized study: ${studyName}`)
-    }
-
     // author might be a team lets check
     if (teamName && teamName !== cfg.read().nickname) {
       _debug(this.debug, teamName)
+      const s = wait(`Collecting user/team info`)
       const team = await findOne(teamName, Team, this._token, { throwENOENT: true })
+      s()
       if (team) {
         author = team.get('name')
       }
@@ -170,7 +169,12 @@ module.exports = class Kyso {
       throw error
     }
 
-    return createVersion(this.pkg, this.dir, this._token, message, { debug: this.debug })
+    const version = await createVersion(this.pkg, this.dir, this._token, message, { debug: this.debug }) // eslint-disable-line
+    return studyJSON.merge(this.dir, { _version: version.get('sha') })
+  }
+
+  async currentVersion(dest) {
+    return currentVersion(dest, this.pkg, this._token, { debug: this.debug })
   }
 
   async lsVersions({ studyName = null } = {}) {
@@ -207,52 +211,66 @@ module.exports = class Kyso {
 
   async clone(studyName, author, { versionSha = null, target = null } = {}) {
     // Note: target is relative
-    const { study, version, files } = getSVF(studyName, author, this._token,
+    const s = wait(`Retrieving details of ${author}/${studyName}`)
+    const { study, version, files } = await getSVF(studyName, author, this._token,
       { versionSha, debug: this.debug })
+    s()
 
-    return clone(study, version, files, this.dir, { target })
+    await clone(study, version, files, this.dir, { target })
+    const dest = target || path.join(this.dir, study.get('name'))
+    return studyJSON.merge(dest, { _version: version.get('sha') })
   }
 
   async checkout(versionSha) {
-    const { study, version, files } = getSVF(this.pkg.name, this.pkg.author, this._token,
+    const { study, version, files } = await getSVF(this.pkg.name, this.pkg.author, this._token,
       { versionSha, debug: this.debug })
 
     return clone(study, version, files, this.dir, { target: '.' })
   }
 
   async pullMerge(studyName, author, dest, { versionSha = null }) {
+    let s = wait(`Retrieving details current study`)
     const currentStudy = await findOne(this.pkg.name, Study, this._token, { throwENOENT: true })
+    s()
 
+    s = wait(`Retrieving details of ${author}/${studyName}`)
     const {
       study: targetStudy,
       version: targetVersion,
       files: targetFiles
     } = await getSVF(studyName, author, this._token, { versionSha, debug: this.debug })
+    s()
 
+    s = wait(`Calculating the ancestor version`)
     const baseVersion = await getCommonVersion(currentStudy, targetStudy, this._token, { debug: this.debug }) // eslint-disable-line
+    s()
     _debug(this.debug, `Target version: ${targetVersion.get('sha')}`)
     _debug(this.debug, `Base version: ${baseVersion.get('sha')}`)
 
     // download the target version
-    const target = path.join('.merge', `target`)
-    _debug(this.debug, `Dowloading the target version ${targetVersion.get('sha')}`)
+    const target = path.join('.kyso', 'merge', `target`)
+    _debug(this.debug, `Downloading the target version ${targetVersion.get('sha')}`)
+
+    console.log(`Pulling the fork`)
     await clone(targetStudy, targetVersion, targetFiles, this.dir, { target, debug: this.debug, throwExists: false }) // eslint-disable-line
 
     // download the base version
-    const base = path.join('.merge', `base`)
+    s = wait(`Fetching the ancestor`)
+    const base = path.join('.kyso', 'merge', `base`)
     _debug(this.debug, `Dowloading the base version`)
     const fileQuery = baseVersion.relation('files').query()
     const baseFiles = await fileQuery.find({ sessionToken: this._token })
+    s()
     await clone(targetStudy, baseVersion, baseFiles, this.dir, { target: base, debug: this.debug, throwExists: false }) // eslint-disable-line
   }
 
   async applyMerge() {
-    const target = path.join('.merge', `target`)
-    const base = path.join('.merge', `base`)
+    const target = path.join('.kyso', 'merge', `target`)
+    const base = path.join('.kyso', 'merge', `base`)
     return merge(target, process.cwd(), base, { debug: this.debug })
   }
 
   async lsConflicts(dest) {
-    return lsConflicts(path.resolve('.merge', 'target'), dest, { debug: this.debug })
+    return lsConflicts(path.resolve('.kyso', 'merge', 'target'), dest, { debug: this.debug })
   }
 }

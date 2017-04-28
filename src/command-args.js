@@ -1,6 +1,6 @@
 const minimist = require('minimist')
 const login = require('../src/login')
-const cfg = require('../src/cfg')
+const cfg = require('../src/kyso-cfg')
 const exit = require('../src/utils/exit')
 const { error } = require('../src/error')
 

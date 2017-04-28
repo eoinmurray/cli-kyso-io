@@ -10,6 +10,7 @@ const chalk = require('chalk')
 // supplied by the user
 const IGNORED = `.hg
 .git
+.kyso
 .merge
 .gitmodules
 .svn

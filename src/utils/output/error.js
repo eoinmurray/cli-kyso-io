@@ -1,4 +1,5 @@
 const chalk = require('chalk')
+const spinner = require('./wait')
 
 // Prints an error message
 module.exports = msg => {
@@ -6,5 +7,6 @@ module.exports = msg => {
     msg = msg.message // eslint-disable-line
   }
 
+  if (spinner.stop) spinner.stop()
   console.error(`${chalk.red('> Error!')} ${msg}`)
 }

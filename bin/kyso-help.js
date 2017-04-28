@@ -15,10 +15,6 @@ const help = () => {
 
     -h, --help                Output usage information
     -v, --version             Output the version number
-
-  ${chalk.dim('Examples:')}
-
-    TODO
 `
   )
 }

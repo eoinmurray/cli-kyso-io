@@ -7,6 +7,7 @@ const strlen = require('../src/strlen')
 const { error, handleError } = require('../src/error')
 const Kyso = require('../src')
 const exit = require('../src/utils/exit')
+const wait = require('../src/utils/output/wait')
 
 const help = async () => {
   console.log(
@@ -41,7 +42,9 @@ const ls = async (kyso, args) => {
   }
 
   const start_ = new Date()
+  const st = wait(`Fetching studies`)
   const studyList = await kyso.lsStudies()
+  st()
   studyList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
   const current = new Date()
@@ -80,7 +83,9 @@ const rm = async (kyso, args) => {
     throw err
   }
 
+  const st = wait(`Fetching study`)
   const studyList = await kyso.lsStudies()
+  st()
   const _study = studyList.find(d => (d.get('name') === _target))
 
   if (!_study) {
