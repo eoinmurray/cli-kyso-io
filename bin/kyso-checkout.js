@@ -10,22 +10,20 @@ const Kyso = require('../src')
 const help = async () => {
   console.log(
     `
-  ${chalk.bold('kyso versions')} <ls | create | rm> <versionname>
+  ${chalk.bold('kyso checkout')} <versionhash>
 
   ${chalk.dim('Options:')}
     -h, --help              Output usage information
+    -d, --debug             Debug mode [off]
 
   ${chalk.dim('Examples:')}
 
-  ${chalk.gray('–')} Lists all your versions:
-      ${chalk.cyan('$ kyso versions ls')}
+  ${chalk.gray('–')} Checkout an older version:
+      ${chalk.cyan('$ kyso checkout ed3f4f')}
 
-  ${chalk.gray('–')} Creates a version:
-      ${chalk.cyan(`$ kyso versions create ${chalk.underline('"a commit message"')}`)}
-
-  ${chalk.gray('–')} Removing a version:
-      ${chalk.cyan('$ kyso versions rm <version>')}
-`
+  ${chalk.gray('–')} Checkout the latest:
+    ${chalk.cyan('$ kyso checkout latest')}
+  `
   )
 }
 
@@ -39,7 +37,7 @@ const checkout = async (kyso, args) => {
   const start_ = new Date()
   await kyso.checkout(versionSha)
   const elapsed_ = ms(new Date() - start_)
-  console.log(`> Cloned study ${chalk.gray(`[${elapsed_}]`)}`)
+  console.log(`> Checked out study ${chalk.gray(`[${elapsed_}]`)}`)
   return true
 }
 

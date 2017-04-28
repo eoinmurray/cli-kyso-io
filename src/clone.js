@@ -30,7 +30,7 @@ const download = async (url, dest) => new Promise(async (resolve, reject) => { /
     })
 })
 
-module.exports = async (study, version, files, wd, { target = null, debug = false, throwExists = true } = {}) => { // eslint-disable-line
+module.exports = async (study, version, files, wd, { target = null, force = false, debug = false, throwExists = true } = {}) => { // eslint-disable-line
   const studyDir = path.join(wd, target || study.get('name'))
   try {
     await fs.stat(studyDir)
@@ -39,7 +39,7 @@ module.exports = async (study, version, files, wd, { target = null, debug = fals
       e.userError = true
       throw e
     } else {
-      return
+      if(!force) return // eslint-disable-line
     }
   } catch (e) {
     if (e.code !== 'ENOENT') {
@@ -58,7 +58,9 @@ module.exports = async (study, version, files, wd, { target = null, debug = fals
     }
     if (file.get('name') === 'study.json') {
       const st = wait(`Writing study.json`, 'bouncingBar')
-      await fs.writeFile(dest, JSON.stringify(version.get('pkg'), null, 3))
+      const pkg = version.get('pkg')
+      pkg._version = version.get('sha')
+      await fs.writeFile(dest, JSON.stringify(pkg, null, 2))
       return st(true)
     }
 

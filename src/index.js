@@ -187,6 +187,7 @@ module.exports = class Kyso {
     const study = await findOne(studyName || this.pkg.name, Study, this._token,
       { throwENOENT: true })
     const query = await study.relation('versions').query()
+    query.descending('createdAt')
     const versions = await query.find({ sessionToken: this._token })
     return versions
   }
@@ -222,10 +223,20 @@ module.exports = class Kyso {
   }
 
   async checkout(versionSha) {
+    let s
+    if (versionSha === 'latest') {
+      s = wait(`Retrieving details of latest study`)
+      const versions = await this.lsVersions()
+      versionSha = versions[0].get('sha') // eslint-disable-line
+      s()
+    }
+
+    s = wait(`Retrieving study versions and files`)
     const { study, version, files } = await getSVF(this.pkg.name, this.pkg.author, this._token,
       { versionSha, debug: this.debug })
+    s()
 
-    return clone(study, version, files, this.dir, { target: '.' })
+    return clone(study, version, files, this.dir, { target: '.', throwExists: false, force: true })
   }
 
   async pullMerge(studyName, author, dest, { versionSha = null }) {

@@ -40,6 +40,53 @@ const help = async () => {
   )
 }
 
+
+const status = async (kyso) => {
+  const start = new Date()
+  const dir = process.cwd()
+
+  const {
+    version,
+    isDirty,
+    added,
+    currentSha,
+    removed,
+    unchanged,
+    modified
+  } = await kyso.currentVersion(dir)
+
+  if (isDirty) {
+    let out = null
+    const opts = { align: ['l', 'l', 'l'], hsep: ' '.repeat(1), stringLength: strlen }
+    let all = []
+    if (added.length !== 0) {
+      all = all.concat([['', chalk.dim('> Added'), '', '']], added.map(d => ['', '', d.name, d.sha]))
+    }
+    if (removed.length !== 0) {
+      all = all.concat([['', chalk.dim('> Removed'), '', '']], removed.map(d => ['', '', d.name, d.sha]))
+    }
+    if (unchanged.length !== 0) {
+      all = all.concat([['', chalk.dim('> Unchanged'), '', '']], unchanged.map(d => ['', '', d.name, d.sha]))
+    }
+    if (modified.length !== 0) {
+      all = all.concat([['', chalk.dim('> Modified'), '', '']], modified.map(d => ['', '', d.name, d.sha]))
+    }
+
+    out = table(all, opts)
+    console.log(`\n${out}\n`)
+  }
+
+  const elapsed = ms(new Date() - start)
+
+  if (isDirty) {
+    console.log(`Last version was ${chalk.bold(version.get('sha'))} but files have changed.`)
+    console.log(`Current hash is  ${chalk.bold(currentSha)} [${elapsed}]`)
+  } else {
+    console.log(`Current version is ${chalk.underline(version.get('sha'))}. No changes [${elapsed}]`)
+  }
+}
+
+
 const ls = async (kyso, args) => {
   let studyName = null
   if (args.length === 1) {
@@ -53,6 +100,8 @@ const ls = async (kyso, args) => {
   const st = wait(`Fetching versions`)
   const versionList = await kyso.lsVersions({ studyName })
   st()
+  const { version: currentVersion, isDirty } = await kyso.currentVersion(process.cwd())
+
   versionList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
   const current = new Date()
@@ -67,7 +116,7 @@ const ls = async (kyso, args) => {
           const time = chalk.gray(`${ms(current - new Date(t.createdAt))} ago`)
 
           let star = ''
-          if (kyso.pkg && t.get('sha') === kyso.pkg._version) {
+          if (currentVersion && t.get('sha') === currentVersion.get('sha') && !isDirty) {
             star = '✔'
           }
 
@@ -162,52 +211,6 @@ const create = async (kyso, args) => {
     throw err
   }
 }
-
-const status = async (kyso) => {
-  const start = new Date()
-  const dir = process.cwd()
-
-  const {
-    version,
-    isDirty,
-    added,
-    currentSha,
-    removed,
-    unchanged,
-    modified
-  } = await kyso.currentVersion(dir)
-
-  if (isDirty) {
-    let out = null
-    const opts = { align: ['l', 'l', 'l'], hsep: ' '.repeat(1), stringLength: strlen }
-    let all = []
-    if (added.length !== 0) {
-      all = all.concat([['', chalk.dim('> Added'), '', '']], added.map(d => ['', '', d.name, d.sha]))
-    }
-    if (removed.length !== 0) {
-      all = all.concat([['', chalk.dim('> Removed'), '', '']], removed.map(d => ['', '', d.name, d.sha]))
-    }
-    if (unchanged.length !== 0) {
-      all = all.concat([['', chalk.dim('> Unchanged'), '', '']], unchanged.map(d => ['', '', d.name, d.sha]))
-    }
-    if (modified.length !== 0) {
-      all = all.concat([['', chalk.dim('> Modified'), '', '']], modified.map(d => ['', '', d.name, d.sha]))
-    }
-
-    out = table(all, opts)
-    console.log(`\n${out}\n`)
-  }
-
-  const elapsed = ms(new Date() - start)
-
-  if (isDirty) {
-    console.log(`Last version was ${chalk.bold(version.get('sha'))} but files have changed.`)
-    console.log(`Current hash is  ${chalk.bold(currentSha)} [${elapsed}]`)
-  } else {
-    console.log(`Current version is ${chalk.underline(version.get('sha'))}. No changes [${elapsed}]`)
-  }
-}
-
 
 (async () => {
   try {

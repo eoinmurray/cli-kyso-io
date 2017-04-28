@@ -37,7 +37,7 @@ module.exports = async (study, version, files, wd, { target = null } = {}) => {
       return fs.writeFile(dest, '')
     }
     if (file.get('name') === 'study.json') {
-      return fs.writeFile(dest, JSON.stringify(version.get('pkg'), null, 3))
+      return fs.writeFile(dest, JSON.stringify(version.get('pkg'), null, 2))
     }
     return download(file.get('file').url(), dest)
   }))

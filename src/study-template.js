@@ -7,5 +7,5 @@ module.exports = async (args) => {
     metadata: {}
   }
 
-  return JSON.stringify(template, null, 3)
+  return JSON.stringify(template, null, 2)
 }
