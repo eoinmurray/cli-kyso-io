@@ -1,0 +1,10 @@
+{
+  "name": "waves",
+  "author": "eoinmurray",
+  "tags": [],
+  "scripts": {},
+  "docker": {
+    "image": "."
+  },
+  "metadata": {}
+}

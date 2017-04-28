@@ -1,7 +1,9 @@
-const Docker = require('dockerode')
-const Stream = require('stream')
-const opn = require('opn')
 const { spawn } = require('child_process')
+const Stream = require('stream')
+const Docker = require('dockerode')
+const opn = require('opn')
+const dockerStream = require('./utils/output/docker-stream')
+
 
 module.exports = class {
   constructor(kyso) {
@@ -10,23 +12,17 @@ module.exports = class {
     this.docker = new Docker()
     this.container = null
     this.started = false
-    this.url = null
-    this.stdout = new Stream.Writable({
-      write: (chunk, encoding, next) => {
-        this.parseToken(chunk)
-        next()
-      }
-    })
+    this.token = null
   }
 
   parseToken(chunk) {
-    process.stdout.write(`${chunk}`)
+    process.stdout.write(chunk)
     if (chunk.includes('?token=')) {
       // get the token
       const lines = chunk.toString().split('\n')
       lines.forEach(line => {
         if (line.includes('?token=') && !line.includes('Notebook')) {
-          this.url = line.trim()
+          this.token = line.trim().split('?token=')[1]
           this.open()
         }
       })
@@ -49,17 +45,21 @@ module.exports = class {
   }
 
   async build() {
-    console.log(`Building extended image`)
     const stream = await this.docker.buildImage({ context: process.cwd(), src: ['Dockerfile'] }, {
       t: `docker-image-${this.kyso.pkg.name}`
     })
-
-    stream.pipe(process.stdout)
+    stream.pipe(dockerStream)
     this.image = `docker-image-${this.kyso.pkg.name}`
+    return true
   }
 
   async run(port = 8888) {
+    this.port = port
+    this.container = null
+    this.started = false
+    this.token = null
     if (this.image === ".") {
+      console.log(`\nRebuilding image\n`)
       await this.build()
     }
 
@@ -88,13 +88,31 @@ module.exports = class {
       stream: true, stdout: true, stderr: true, tty: true
     })
 
-    stream.pipe(this.stdout)
-    console.log(`Starting container ${this.container.id}`)
+    const stdout = new Stream.Writable({
+      write: (chunk, encoding, next) => {
+        this.parseToken(chunk)
+        next()
+      }
+    })
+
+    stream.pipe(stdout)
+    console.log(`\nStarting container ${this.container.id} exposed on port ${port}`)
     this.started = true
-    await this.container.start()
+
+    try {
+      await this.container.start()
+    } catch (e) {
+      if (e.json && e.json.message) {
+        if (!e.json.message.includes('port is already allocated')) {
+          throw e
+        }
+        stdout.end()
+        this.run(port + 1)
+      }
+    }
   }
 
   async open() {
-    if (this.url) opn(this.url)
+    if (this.token) opn(`http://0.0.0.0:${this.port}/?token=${this.token}`)
   }
 }
