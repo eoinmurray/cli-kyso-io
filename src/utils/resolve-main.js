@@ -16,12 +16,8 @@ module.exports = async (files, pkg) => {
 
   const er = new Error(`\nCannot find notebook.(ipynb, rmd, md, txt) in this dir, and
 no main file is specified in the study.json.
-
 This means that kyso wont know what file to render online.
-
-Please make a main file called notebook with extention
-ipynb, rmd, md, or txt or specify a main file using
-'kyso main <yourfile>'`)
+Please make a main file called notebook with extention ipynb, rmd, or md.`)
   er.userError = true
   throw er
 }

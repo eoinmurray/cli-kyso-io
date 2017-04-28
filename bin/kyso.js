@@ -40,6 +40,7 @@ const commands = new Set([
   'clone',
   'checkout',
   'merge',
+  'docker',
 
   // must list aliases too
   'create'
