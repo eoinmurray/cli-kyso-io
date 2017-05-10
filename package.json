@@ -1,6 +1,6 @@
 {
   "name": "kyso",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Kyso command line interface",
   "bin": {
     "kyso": "./bin/kyso.js"
