@@ -2,6 +2,9 @@
   "name": "kyso",
   "version": "0.1.0",
   "description": "Kyso command line interface",
+  "repository": "eoinmurray/cli-kyso-io",
+  "author": "eoinmurray <eoin@kyso.io>",
+  "license": "MIT",
   "bin": {
     "kyso": "./bin/kyso.js"
   },
@@ -14,9 +17,6 @@
       "test/*.js"
     ]
   },
-  "repository": "eoinmurray/cli-kyso-io",
-  "author": "eoinmurray <eoin@kyso.io>",
-  "license": "MIT",
   "dependencies": {
     "ansi": "^0.3.1",
     "ansi-escapes": "^1.4.0",

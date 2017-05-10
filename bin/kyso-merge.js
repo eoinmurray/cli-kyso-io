@@ -71,7 +71,7 @@ const pullMerge = async (kyso, args) => {
 
   await kyso.pullMerge(studyName, teamName, dest, { versionSha })
   const elapsed_ = ms(new Date() - start_)
-  console.log(`> Downloaded merge to .merge/ ${chalk.gray(`[${elapsed_}]`)}`)
+  console.log(`> Downloaded merge to .kyso/merge ${chalk.gray(`[${elapsed_}]`)}`)
   return true
 }
 
@@ -123,16 +123,6 @@ const applyMerge = async (kyso) => {
 }
 
 
-const nbResolve = async (kyso, args) => {
-  const start_ = new Date()
-  const file = String(args[0])
-  await kyso.nbResolve(file)
-  const elapsed_ = ms(new Date() - start_)
-  console.log(`> Resolved ${chalk.gray(`[${elapsed_}]`)}`)
-  return true
-}
-
-
 (async () => {
   try {
     const { args, argv, subcommand, token, apiUrl } = await getCommandArgs()
@@ -151,10 +141,6 @@ const nbResolve = async (kyso, args) => {
 
     if (subcommand === 'ls' || subcommand === 'list') {
       return await ls(kyso, args)
-    }
-
-    if (subcommand === 'nb' || subcommand === 'nbresolve') {
-      return await nbResolve(kyso, args)
     }
 
     if (subcommand === 'pull') {

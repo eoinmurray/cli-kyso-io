@@ -37,6 +37,8 @@ const commands = new Set([
   'invites',
   'tags',
   'run',
+  'docs',
+  'browse',
   'clone',
   'checkout',
   'merge',

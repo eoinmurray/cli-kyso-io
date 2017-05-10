@@ -11,7 +11,11 @@ const dockerStream = require('./utils/output/docker-stream')
 module.exports = class {
   constructor(kyso) {
     this.kyso = kyso
-    this.image = (kyso.pkg.docker && kyso.pkg.docker.image) || 'kyso-jupyter'
+
+    this.image = 'kyso/kyso-jupyter'
+    if (kyso && kyso.pkg && kyso.pkg.docker && kyso.pkg.docker.image) {
+      this.image = kyso.pkg.docker.image
+    }
     this.docker = new Docker()
     this.container = null
     this.started = false
