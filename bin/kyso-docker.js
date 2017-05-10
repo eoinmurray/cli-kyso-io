@@ -24,6 +24,8 @@ const help = async () => {
 
 const run = async (docker) => docker.run()
 
+const init = async (docker) => docker.init()
+
 const open = async (docker) => {} // eslint-disable-line
 
 const install = async (docker, args) => {} // eslint-disable-line
@@ -48,6 +50,10 @@ const install = async (docker, args) => {} // eslint-disable-line
 
     if (subcommand === 'run') {
       return await run(docker, args)
+    }
+
+    if (subcommand === 'init') {
+      return await init(docker, args)
     }
 
     if (subcommand === 'open') {

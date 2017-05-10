@@ -1,4 +1,7 @@
 const { spawn } = require('child_process')
+const { readFile, writeFile } = require('fs-promise')
+const studyJSON = require('./get-study-json')
+const { resolve: resolvePath } = require('path')
 const Stream = require('stream')
 const Docker = require('dockerode')
 const opn = require('opn')
@@ -114,5 +117,35 @@ module.exports = class {
 
   async open() {
     if (this.token) opn(`http://0.0.0.0:${this.port}/?token=${this.token}`)
+  }
+
+  async init() {
+    try {
+      await readFile(resolvePath(this.kyso.dir, 'Dockerfile'))
+      const e = new Error(`Dockerfile already exists in ${this.kyso.dir}`)
+      e.userError = true
+      throw e
+    } catch (err) {
+      if (err.code !== 'ENOENT') {
+        throw err
+      }
+
+      const template = `FROM kyso-jupyter
+USER root
+
+# here you can run extra things like pip install
+# RUN pip install somepackage
+
+USER ds
+`
+      await writeFile(resolvePath(this.kyso.dir, 'Dockerfile'), template)
+      await studyJSON.merge(this.kyso.dir, {
+        docker: {
+          image: "."
+        }
+      })
+      console.log(`Created Dockerfile`)
+      console.log(`Use 'kyso docker run' to start docker app`)
+    }
   }
 }

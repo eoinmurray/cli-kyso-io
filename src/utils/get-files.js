@@ -17,7 +17,7 @@ const IGNORED = `.hg
 .npmignore
 .dockerignore
 .gitignore
-.ipynb-checkpoints
+.ipynb_checkpoints
 .*.swp
 .DS_Store
 .wafpicke-*

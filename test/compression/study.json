@@ -1,10 +1,7 @@
 {
-  "name": "waves",
+  "name": "compression",
   "author": "eoinmurray",
   "tags": [],
   "scripts": {},
-  "docker": {
-    "image": "."
-  },
   "metadata": {}
 }
