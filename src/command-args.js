@@ -8,11 +8,13 @@ module.exports = async () => {
   const argv = minimist(process.argv.slice(2), {
     boolean: [
       'help',
-      'debug'
+      'debug',
+      'private'
     ],
     alias: {
       help: 'h',
-      debug: 'd'
+      debug: 'd',
+      private: 'p'
     }
   })
 

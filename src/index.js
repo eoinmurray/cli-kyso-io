@@ -38,7 +38,7 @@ module.exports = class Kyso {
     this.pkg = hasStudyJson ? Object.assign(studyConfig) : null
   }
 
-  async createStudy(studyName, teamName = null) {
+  async createStudy(studyName, teamName = null, requestPrivate) {
     let author = cfg.read().nickname
     // can specify the study author as username/studyname or teamname/studyname
     // author might be a team lets check
@@ -53,11 +53,12 @@ module.exports = class Kyso {
     }
 
     const options = { debug: this.debug, pkg: this.hasStudyJson ? this.pkg : null }
-    return createStudy(studyName, author, this._token, options)
+    return createStudy(studyName, author, this._token, requestPrivate, options)
   }
 
   async lsStudies() {
     const query = new Parse.Query(Study)
+    query.equalTo('author', cfg.read().nickname)
     const studies = await query.find({ sessionToken: this._token })
     return studies
   }

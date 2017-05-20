@@ -47,6 +47,7 @@ const getFileList = async (dir, pkg, { debug = false, base64 = true } = {}) => {
           size: data.length,
           file: toRelative(name, dir),
           mode,
+          binary: data,
           data: base64 ? data.toString('base64') : null
         }
       })

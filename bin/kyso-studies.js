@@ -111,7 +111,8 @@ const rm = async (kyso, args) => {
   return true
 }
 
-const create = async (kyso, args) => {
+const create = async (kyso, args, argv) => {
+  const requestPrivate = argv.private
   if (args.length !== 1) {
     error('Invalid number of arguments')
     return exit(1)
@@ -127,7 +128,7 @@ const create = async (kyso, args) => {
     studyName = name.split('/')[1]
   }
 
-  const studyMade = await kyso.createStudy(studyName, teamName)
+  const studyMade = await kyso.createStudy(studyName, teamName, requestPrivate)
   const elapsed = ms(new Date() - start)
 
   if (studyMade) {
@@ -175,7 +176,7 @@ const readConfirmation = async (_study) =>
     }
 
     if (subcommand === 'create') {
-      return await create(kyso, args)
+      return await create(kyso, args, argv)
     }
 
     error('Please specify a valid subcommand: ls | create | rm | help')

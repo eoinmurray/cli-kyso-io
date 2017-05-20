@@ -4,12 +4,11 @@ const Parse = require('parse/node')
 const makeTemplate = require('./study-template')
 const studyJSON = require('./get-study-json')
 const findOne = require('./utils/find-one')
-const _debug = require('./utils/output/debug')
 const wait = require('./utils/output/wait')
 
 const Study = Parse.Object.extend('Study')
 
-const createStudy = async (studyName, author, token, { debug = false, pkg = null } = {}) => {
+const createStudy = async (studyName, author, token, requestPrivate, { pkg = null } = {}) => {
   let s = wait(`Checking for existing study`)
   const existingStudy = await findOne(studyName, Study, token)
   s()
@@ -39,8 +38,17 @@ const createStudy = async (studyName, author, token, { debug = false, pkg = null
 
   study.set('name', studyName)
   study.set('author', author)
+  study.set('requestPrivate', requestPrivate)
   s = wait(`Creating study: ${author}/${studyName}`)
-  await study.save(null, { sessionToken: token })
+  try {
+    await study.save(null, { sessionToken: token })
+  } catch (e) {
+    if (e.code === 601) {
+      e.userError = true
+    }
+    throw e
+  }
+
   s()
 
   // all good so lets write the study.json
