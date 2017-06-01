@@ -7,6 +7,7 @@ const opn = require('opn')
 
 const browse = async (kyso) => {
   opn(`https://kyso.io/${kyso.pkg.author}/${kyso.pkg.name}`)
+  process.exit(1)
 }
 
 

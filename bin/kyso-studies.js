@@ -48,13 +48,14 @@ const ls = async (kyso, args) => {
   studyList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
   const current = new Date()
-  const header = [['', 'name', 'created'].map(s => chalk.dim(s))]
+  const header = [['', 'name', 'created', 'private'].map(s => chalk.dim(s))]
   let out = null
   if (studyList.length !== 0) {
     out = table(header.concat(
         studyList.map(t => {
           const time = chalk.gray(`${ms(current - new Date(t.createdAt))} ago`)
-          return ['', `${t.get('name')}`, time]
+          const isPublic = t.getACL().getPublicReadAccess()
+          return ['', `${t.get('name')}`, time, isPublic ? 'no' : 'yes']
         })
       ), {
         align: ['l', 'l', 'l'],

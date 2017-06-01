@@ -42,7 +42,7 @@ module.exports = class {
       // this.container.stop()
       spawn(`docker`, [`stop`, `${this.container.id}`], {
         detached: true,
-        stdio: 'ignore'
+        // stdio: 'ignore'
       })
       this.started = false
     }

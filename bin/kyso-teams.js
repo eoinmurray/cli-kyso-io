@@ -8,6 +8,7 @@ const Kyso = require('../src')
 const exit = require('../src/utils/exit')
 const wait = require('../src/utils/output/wait')
 const getCommandArgs = require('../src/command-args')
+const opn = require('opn')
 
 const help = () => {
   console.log(
@@ -24,10 +25,11 @@ const help = () => {
       ${chalk.cyan('$ kyso teams ls')}
 
   ${chalk.gray('–')} Create a team:
-      ${chalk.cyan(`$ kyso teams create ${chalk.underline('my-team-name')}`)}
+      ${chalk.cyan(`$ kyso teams create `)}
+        ${chalk.dim('It will open the create team page on Kyso')}
 
   ${chalk.gray('–')} Remove a team:
-      ${chalk.cyan('$ kyso teams rm my-team-name')}
+      Please contact us on laura@kyso.io
 `
   )
 }
@@ -109,33 +111,11 @@ const rm = async (kyso, args) => {
   return true
 }
 
-const create = async (kyso, args) => {
-  if (args.length !== 1) {
-    error('Invalid number of arguments')
-    return exit(1)
-  }
-
-  if (kyso.debug) {
-    console.log('[debug] Starting to create team.')
-  }
-
-  const start = new Date()
-  const name = String(args[0])
-  const st = wait(`Creating team`)
-  const team = await kyso.createTeam(name)
-  st()
-
-  if (kyso.debug) {
-    console.log('[debug] Saved team.')
-  }
-
-  const elapsed = ms(new Date() - start)
-
-  if (team) {
-    console.log(`${chalk.cyan('> Success!')} Team ${chalk.bold(chalk.underline(name))} created [${elapsed}]`)
-  }
-  return true
+const create = async () => {
+  opn(`https://kyso.io/teams/create`)
+  process.exit(1)
 }
+
 
 async function readConfirmation(_team) {
   return new Promise(resolve => { // eslint-disable-line

@@ -1,8 +1,12 @@
 {
-  "name": "request-private",
+  "name": "compression",
   "author": "eoinmurray",
   "tags": [],
-  "scripts": {},
+  "scripts": {
+    "start": "kyso docker start"
+  },
   "metadata": {},
-  "_version": "00bcd0152e5e215f1617f5cca1aaffa66f1d9459"
+  "docker": {
+    "image": "."
+  }
 }

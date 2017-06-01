@@ -45,6 +45,7 @@ const commands = new Set([
   'docker',
 
   // must list aliases too
+  'start',
   'create',
   'push',
   'list',
@@ -58,6 +59,7 @@ const aliases = new Map([
   ['push', 'versions create'],
   ['list', 'versions ls'],
   ['status', 'versions status'],
+  ['start', 'run start'],
 ])
 
 // use at least the defaultCommand, which is help
