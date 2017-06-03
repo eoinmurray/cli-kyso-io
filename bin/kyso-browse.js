@@ -6,8 +6,9 @@ const Kyso = require('../src')
 const opn = require('opn')
 
 const browse = async (kyso) => {
-  opn(`https://kyso.io/${kyso.pkg.author}/${kyso.pkg.name}`)
-  process.exit(1)
+  console.log(`Opening 'https://kyso.io/${kyso.pkg.author}/${kyso.pkg.name}''`)
+  await opn(`https://kyso.io/${kyso.pkg.author}/${kyso.pkg.name}`)
+  return exit(0)
 }
 
 

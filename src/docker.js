@@ -120,7 +120,7 @@ module.exports = class {
   }
 
   async open() {
-    if (this.token) opn(`http://0.0.0.0:${this.port}/?token=${this.token}`)
+    if (this.token) opn(`http://localhost:${this.port}/?token=${this.token}`)
   }
 
   async init() {

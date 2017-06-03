@@ -79,7 +79,11 @@ ansi-align@^1.1.0:
   dependencies:
     string-width "^1.0.1"
 
-ansi-escapes@1.4.0, ansi-escapes@^1.1.0, ansi-escapes@^1.4.0:
+ansi-escapes@2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/ansi-escapes/-/ansi-escapes-2.0.0.tgz#5bae52be424878dd9783e8910e3fc2922e83c81b"
+
+ansi-escapes@^1.1.0, ansi-escapes@^1.4.0:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/ansi-escapes/-/ansi-escapes-1.4.0.tgz#d3a8a83b319aa67793662b13e761c7911422306e"
 
@@ -1569,11 +1573,11 @@ electron-to-chromium@^1.2.7:
   version "1.3.2"
   resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.3.2.tgz#b8ce5c93b308db0e92f6d0435c46ddec8f6363ab"
 
-email-prompt@^0.2.0:
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/email-prompt/-/email-prompt-0.2.0.tgz#b16d1970b7b2537b01920fe01f5062641a1f41f3"
+email-prompt@^0.3.0:
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/email-prompt/-/email-prompt-0.3.0.tgz#5161dde1863db962a671843fd180e9add1c8cf18"
   dependencies:
-    ansi-escapes "1.4.0"
+    ansi-escapes "2.0.0"
     chalk "1.1.3"
 
 email-validator@^1.0.7:

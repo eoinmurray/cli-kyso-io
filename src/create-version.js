@@ -56,23 +56,25 @@ const upload = async (study, token, debug, dir, pkg, { sha, size, file, binary }
             bar.update(p.percentage / 100)
           })
 
-          const body = fs.createReadStream(path.join(dir, file)).pipe(str)
+          const body = fs
+            .createReadStream(path.join(dir, file))
+            .pipe(str)
 
           const url = debug ? 'http://localhost:8080/parse' : secrets.PARSE_SERVER_URL
           const res = await fetch(`${url}/files/${file}-${sha}`, {
             method: 'POST',
             headers: {
-              'Content-Type': 'text/plain',
+              //'Content-Type': 'text/plain',
               'X-Parse-Application-Id': secrets.PARSE_APP_ID,
               'X-Parse-REST-API-Key': secrets.PARSE_FILE_KEY,
               'X-Parse-Session-Token': token
             },
             body
           })
-          const _upload = await res.json()
 
+          const _upload = await res.json()
           if (Object.prototype.hasOwnProperty.call(_upload, 'error')) {
-            reject(new Error(_upload.error))
+            return reject(new Error(_upload.error))
           }
 
           _upload.__type = 'File'

@@ -46,7 +46,7 @@
     "commander": "^2.9.0",
     "diff": "^3.2.0",
     "dockerode": "^2.4.3",
-    "email-prompt": "^0.2.0",
+    "email-prompt": "^0.3.0",
     "email-validator": "^1.0.7",
     "fs-promise": "^2.0.2",
     "glob": "^7.1.1",
