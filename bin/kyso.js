@@ -4,6 +4,9 @@ const nodeVersion = require('node-version')
 const updateNotifier = require('update-notifier')
 const chalk = require('chalk')
 const pkg = require('../src/pkg')
+const hardRejection = require('hard-rejection')
+
+hardRejection()
 
 // Throw an error if node version is too low
 if (nodeVersion.major < 6) {

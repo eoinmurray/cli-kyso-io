@@ -52,6 +52,7 @@
     "glob": "^7.1.1",
     "global": "^4.3.1",
     "graceful-fs": "^4.1.11",
+    "hard-rejection": "^1.0.0",
     "ignore": "^3.2.7",
     "minimist": "^1.2.0",
     "mkdirp": "^0.5.1",

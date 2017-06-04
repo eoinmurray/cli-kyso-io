@@ -16,6 +16,9 @@ const lifecycle = require('./utils/lifecycle')
 const findOne = require('./utils/find-one')
 const _debug = require('./utils/output/debug')
 const wait = require('./utils/output/wait')
+const hardRejection = require('hard-rejection')
+
+hardRejection()
 
 Parse.initialize(secrets.PARSE_APP_ID)
 const Study = Parse.Object.extend('Study')

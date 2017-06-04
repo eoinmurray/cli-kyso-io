@@ -2,7 +2,7 @@
 const Parse = require('parse/node')
 const _debug = require('./output/debug')
 
-module.exports = async (val, ParseClass, _token, { key = 'name', throwENOENT = false, debug = false } = {}) => {
+module.exports = async (val, ParseClass, _token, { key = 'name', key2 = false, val2 = false, throwENOENT = false, debug = false } = {}) => {
   const query = new Parse.Query(ParseClass)
 
   _debug(debug, `Querying ${ParseClass.className} for ${key}=${val}`)
@@ -10,6 +10,10 @@ module.exports = async (val, ParseClass, _token, { key = 'name', throwENOENT = f
     query.equalTo(key, val)
   } else {
     query.startsWith(key, val)
+  }
+
+  if (key2 && val2) {
+    query.equalTo(key2, val2)
   }
 
   const results = await query.find({ sessionToken: _token })

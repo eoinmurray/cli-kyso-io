@@ -29,13 +29,14 @@ const serial = funcs =>
 const upload = async (study, token, debug, dir, pkg, { sha, size, file, binary }) => {
   return new Promise(async (resolve, reject) => {
     let parseFile = await findOne(sha, File, token, { key: 'sha' })
-    _debug(debug && parseFile, `Referencing ${file} (size ${size})`)
+    if (parseFile) console.log(`Referencing ${file} (size ${size})`)
 
+    const fileObj = new File()
     if (!parseFile) {
       if (size === 0) {
-        fileObj = new File()
         await fileObj.save({ file: null, name: file, size, sha, author: pkg.author },
           { sessionToken: token })
+        return resolve(fileObj)
       }
 
       if (size > 0) {
@@ -64,7 +65,7 @@ const upload = async (study, token, debug, dir, pkg, { sha, size, file, binary }
           const res = await fetch(`${url}/files/${file}-${sha}`, {
             method: 'POST',
             headers: {
-              //'Content-Type': 'text/plain',
+              // 'Content-Type': 'text/plain',
               'X-Parse-Application-Id': secrets.PARSE_APP_ID,
               'X-Parse-REST-API-Key': secrets.PARSE_FILE_KEY,
               'X-Parse-Session-Token': token
@@ -83,20 +84,26 @@ const upload = async (study, token, debug, dir, pkg, { sha, size, file, binary }
           reject(e)
         }
       }
-    }
 
-    const s = wait(`Finalizing ${file}`)
-    const fileObj = new File()
-    await fileObj.save({
-      file: parseFile,
-      name: file,
-      size,
-      study,
-      sha,
-      author: pkg.author },
-    { sessionToken: token })
-    s()
-    resolve(fileObj)
+      const s = wait(`Finalizing ${file}`)
+      try {
+        await fileObj.save({
+          file: parseFile,
+          name: file,
+          size,
+          study,
+          sha,
+          author: pkg.author },
+        { sessionToken: token })
+        s()
+        resolve(fileObj)
+      } catch (e) {
+        reject(e)
+      }
+    } else {
+      resolve(parseFile)
+      // parseFile = Parse.File.fromJSON(parseFile.toJSON().file)
+    }
   })
 }
 
@@ -134,7 +141,13 @@ const createVersion = async (pkg, dir, token, message, { debug = false } = {}) =
   const versionSha = versionHash(files, message, { debug })
   s()
   s = wait(`Creating unique version`)
-  const existingVersion = await findOne(versionSha, Version, token, { key: 'sha', debug })
+
+  const existingVersion = await findOne(versionSha, Version, token, {
+    key: 'sha',
+    debug,
+    key2: 'study',
+    val2: study
+  })
   s()
 
   if (existingVersion) {
