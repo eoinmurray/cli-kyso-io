@@ -28,7 +28,11 @@ const serial = funcs =>
 
 const upload = async (study, token, debug, dir, pkg, { sha, size, file, binary }) => {
   return new Promise(async (resolve, reject) => {
-    let parseFile = await findOne(sha, File, token, { key: 'sha' })
+    let parseFile = await findOne(sha, File, token, {
+      key: 'sha',
+      key2: 'study',
+      val2: study
+    })
     if (parseFile) console.log(`Referencing ${file} (size ${size})`)
 
     const fileObj = new File()
