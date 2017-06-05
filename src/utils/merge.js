@@ -61,7 +61,7 @@ const mergeJupyter = async (base, f1, f2, outFile, _cmd = 'nbdime merge') =>
       process.removeListener('SIGTERM', procInterupt)
       process.removeListener('SIGINT', procKill)
       if (er.code === 'ENOENT') {
-        const err = new Error(`nbdime is needed to merge Jupyter notebooks. Run 'pip install nbdime' to install it.`)
+        const err = new Error(`nbdime 0.3.0 is needed to merge Jupyter notebooks. Run 'pip install nbdime==0.3.0' to install it.`)
         err.userError = true
         reject(err)
       }
