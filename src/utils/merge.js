@@ -34,7 +34,6 @@ const mergeJupyter = async (base, f1, f2, outFile, _cmd = 'nbdime merge') =>
   new Promise((resolve, reject) => { // eslint-disable-line
     const conf = {
       cwd: process.cwd(),
-      // stdio: [0, 1, 2]
     }
 
     let sh = 'sh'
@@ -45,7 +44,7 @@ const mergeJupyter = async (base, f1, f2, outFile, _cmd = 'nbdime merge') =>
       conf.windowsVerbatimArguments = true
     }
 
-    const cmd = `${_cmd} "${base}" "${f1}" "${f2}" -o "${outFile}" --log-level ERROR`
+    const cmd = `${_cmd} "${base}" "${f1}" "${f2}"  --log-level DEBUG > "${outFile}"`
 
     const proc = spawn(sh, [shFlag, cmd], conf)
 

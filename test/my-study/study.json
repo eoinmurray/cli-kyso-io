@@ -1,0 +1,10 @@
+{
+  "name": "my-study",
+  "author": "helenadm89",
+  "tags": [],
+  "scripts": {
+    "start": "kyso docker start"
+  },
+  "metadata": {},
+  "_version": "02bf01f773ba3620f738b9dc936205b90f82bd6a"
+}

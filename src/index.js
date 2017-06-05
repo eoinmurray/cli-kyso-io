@@ -209,6 +209,7 @@ module.exports = class Kyso {
       error.userError = true
       throw error
     }
+
     // if all good then try run the scripts
     this.pkg.scripts[cmd] = this.pkg.scripts[cmd] + cmdArgs
     return lifecycle(this.pkg, cmd, this.dir, true)
