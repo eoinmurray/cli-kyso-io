@@ -28,6 +28,7 @@ const Invite = Parse.Object.extend('Invite')
 module.exports = class Kyso {
   constructor({ url, token, debug = false, dir = process.cwd() }) {
     Parse.serverURL = url
+    this.parse = Parse
     this._token = token
     this.dir = dir
     this.debug = debug

@@ -30,9 +30,10 @@ const upload = async (study, token, debug, dir, pkg, { sha, size, file, binary }
   return new Promise(async (resolve, reject) => {
     let parseFile = await findOne(sha, File, token, {
       key: 'sha',
-      key2: 'study',
-      val2: study
+      key2: 'studyId',
+      val2: study.id
     })
+
     if (parseFile) console.log(`Referencing ${file} (size ${size})`)
 
     const fileObj = new File()
@@ -95,6 +96,7 @@ const upload = async (study, token, debug, dir, pkg, { sha, size, file, binary }
           file: parseFile,
           name: file,
           size,
+          studyId: study.id,
           study,
           sha,
           author: pkg.author },
@@ -187,6 +189,7 @@ message: ${existingVersion.get('message')}`)
   s()
   s = wait(`Saving version`)
   version.set('author', cfg.read().nickname)
+  version.set('studyId', study.id)
   version.set('study', study)
   await version.save(null, { sessionToken: token })
   _debug(debug, `Adding version to study.`)

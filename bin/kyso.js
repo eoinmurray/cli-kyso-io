@@ -46,6 +46,7 @@ const commands = new Set([
   'checkout',
   'merge',
   'docker',
+  'test',
 
   // must list aliases too
   'start',

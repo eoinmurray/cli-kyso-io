@@ -1,8 +1,10 @@
 {
   "name": "math-test",
-  "author": "eoinmurray",
+  "author": "eoin",
   "tags": [],
-  "scripts": {},
+  "scripts": {
+    "start": "kyso docker start"
+  },
   "metadata": {},
-  "_version": "e8753ba507fa3d4e447f61014d8dfe606dd04f57"
+  "_version": "fbb15ca8a2297c2a6159d1318e4bebe47d364914"
 }
