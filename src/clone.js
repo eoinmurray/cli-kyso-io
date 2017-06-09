@@ -1,4 +1,4 @@
-const fs = require('fs-promise')
+const fs = require('fs-extra')
 const https = require('https')
 const path = require('path')
 const pify = require('pify')

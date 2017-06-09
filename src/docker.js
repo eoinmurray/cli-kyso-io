@@ -1,5 +1,5 @@
 const { spawn } = require('child_process')
-const { readFile, writeFile } = require('fs-promise')
+const { readFile, writeFile } = require('fs-extra')
 const studyJSON = require('./get-study-json')
 const { resolve: resolvePath } = require('path')
 const Stream = require('stream')

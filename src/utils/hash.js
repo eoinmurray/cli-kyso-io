@@ -1,5 +1,5 @@
 const { createHash } = require('crypto')
-const { readFile } = require('fs-promise')
+const { readFile } = require('fs-extra')
 const _debug = require('./output/debug')
 /**
   * Computes hashes for the contents of each file given.

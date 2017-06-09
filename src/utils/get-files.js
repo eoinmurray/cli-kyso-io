@@ -3,9 +3,10 @@ const flatten = require('arr-flatten')
 const unique = require('array-unique')
 const ignore = require('ignore')
 const _glob = require('glob')
-const { stat, readdir, readFile } = require('fs-promise')
+const fs = require('fs-extra')
 const _debug = require('./output/debug')
 const chalk = require('chalk')
+
 // Base `.gitignore` to which we add entries
 // supplied by the user
 const IGNORED = `.hg
@@ -57,7 +58,7 @@ const clearRelative = (str) => str.replace(/(\n|^)\.\//g, '$1')
 
 const maybeRead = async (path, default_ = '') => {
   try {
-    return await readFile(path, 'utf8')
+    return await fs.readFile(path, 'utf8')
   } catch (err) {
     return default_
   }
@@ -118,10 +119,13 @@ async function getFiles(path, pkg, { limit = null, debug = false } = {}) {
     ? await maybeRead(resolve(path, '.gitignore'))
     : null
 
+  let clr = ''
+  if (kysoIgnore || gitIgnore) {
+    clr = clearRelative(kysoIgnore === null ? gitIgnore : kysoIgnore)
+  }
+
   const filter = ignore()
-    .add(
-      `${IGNORED}\n${clearRelative(kysoIgnore === null ? gitIgnore : kysoIgnore)}`
-    )
+    .add(`${IGNORED}\n${clr}`)
     .createFilter()
 
   const prefixLength = path.length + 1
@@ -188,14 +192,14 @@ async function explode(paths, { accepts, debug }) {
     }
 
     try {
-      s = await stat(path)
+      s = await fs.stat(path)
     } catch (e) {
       // In case the file comes from `files` or `main`
       // and it wasn't specified with `.js` by the user
       path = `${file}.js`
 
       try {
-        s = await stat(path)
+        s = await fs.stat(path)
       } catch (e2) {
         _debug(debug, `ignoring invalid file ${file}`)
         return null
@@ -203,7 +207,7 @@ async function explode(paths, { accepts, debug }) {
     }
 
     if (s.isDirectory()) {
-      const all = await readdir(file)
+      const all = await fs.readdir(file)
       /* eslint-disable no-use-before-define */
       return many(all.map(subdir => asAbsolute(subdir, file)))
       /* eslint-enable no-use-before-define */

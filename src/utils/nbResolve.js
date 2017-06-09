@@ -1,4 +1,4 @@
-const fs = require('fs-promise')
+const fs = require('fs-extra')
 const path = require('path')
 
 const getBody = (lines, delimiter1, delimiter2) => {

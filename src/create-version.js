@@ -1,5 +1,5 @@
 const path = require('path')
-const fs = require('fs-promise')
+const fs = require('fs-extra')
 const mkdirp = require('mkdirp')
 const pify = require('pify')
 const tar = require('tar')
@@ -67,18 +67,18 @@ const createVersion = async (pkg, dir, token, message, { debug = false } = {}) =
 
   headers.body = JSON.stringify(body)
   const res = await fetch(`${url}/create-version`, { method: 'POST', body: stream, headers })
-  const response = await res.json()
+  const version = await res.json()
 
   s()
-  if (response.hasOwnProperty('error')) { // eslint-disable-line
-    const err = new Error(response.error)
+  if (version.hasOwnProperty('error')) { // eslint-disable-line
+    const err = new Error(version.error)
     err.userError = true
     throw err
   }
 
   await lifecycle(pkg, 'postversion', dir, true)
-  console.log('Version saved.')
-  return studyJSON.merge(dir, { _version: versionSha })
+  studyJSON.merge(dir, { _version: versionSha })
+  return version
 }
 
 module.exports = createVersion

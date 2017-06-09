@@ -1,4 +1,4 @@
-const fs = require('fs-promise')
+const fs = require('fs-extra')
 const pify = require('pify')
 const mkdirp = require('mkdirp')
 const rimraf = require('rimraf')

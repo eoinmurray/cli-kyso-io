@@ -1,5 +1,5 @@
 const path = require('path')
-const fs = require('fs-promise')
+const fs = require('fs-extra')
 const which = require('which')
 const spawn = require('./spawn')
 

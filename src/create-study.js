@@ -1,5 +1,5 @@
 const path = require('path')
-const fs = require('fs-promise')
+const fs = require('fs-extra')
 const Parse = require('parse/node')
 const makeTemplate = require('./study-template')
 const studyJSON = require('./get-study-json')
@@ -15,6 +15,7 @@ const createStudy = async (studyName, author, token, requestPrivate, { pkg = nul
       requestPrivate
     }, { sessionToken: token })
   } catch (e) {
+    s()
     throw e
   }
 
@@ -22,6 +23,7 @@ const createStudy = async (studyName, author, token, requestPrivate, { pkg = nul
   if (!pkg) {
     const template = await makeTemplate({ name: studyName, author })
     await fs.writeFile(path.join(dir, 'study.json'), template)
+    s()
     return true
   }
 

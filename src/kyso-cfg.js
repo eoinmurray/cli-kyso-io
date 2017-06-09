@@ -1,6 +1,6 @@
 const { homedir } = require('os')
 const path = require('path')
-const fs = require('fs-promise')
+const fs = require('fs-extra')
 
 let file = process.env.KYSO_JSON
   ? path.resolve(process.env.KYSO_JSON)

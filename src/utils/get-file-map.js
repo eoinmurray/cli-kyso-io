@@ -1,6 +1,6 @@
 const getFiles = require('./get-files')
 const { hash } = require('./hash')
-const fs = require('fs-promise')
+const fs = require('fs-extra')
 const path = require('path')
 
 const SEP = process.platform.startsWith('win') ? '\\' : '/'
