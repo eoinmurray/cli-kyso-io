@@ -1,206 +1,84 @@
 const path = require('path')
-const fs = require('fs')
+const fs = require('fs-promise')
+const mkdirp = require('mkdirp')
+const pify = require('pify')
+const tar = require('tar')
 const fetch = require('node-fetch')
-const Parse = require('parse/node')
 const progress = require('progress-stream')
 const ProgressBar = require('progress')
 const secrets = require('./secrets')
 const lifecycle = require('./utils/lifecycle')
-const { fileMapHash } = require('./utils/hash')
-const findOne = require('./utils/find-one')
-const { getFileList } = require('./utils/get-file-map')
-const { versionHash } = require('./utils/hash')
 const getGit = require('./utils/get-git')
 const resolveMain = require('./utils/resolve-main')
-const _debug = require('./utils/output/debug')
 const wait = require('./utils/output/wait')
-const cfg = require('./kyso-cfg')
-
-const Version = Parse.Object.extend('Version')
-const Study = Parse.Object.extend('Study')
-const File = Parse.Object.extend('File')
-
-
-const serial = funcs =>
-  funcs.reduce((promise, func) =>
-    promise.then(result => func().then(Array.prototype.concat.bind(result))), Promise.resolve([])) // eslint-disable-line
-
-
-const upload = async (study, token, debug, dir, pkg, { sha, size, file, binary }) => {
-  return new Promise(async (resolve, reject) => {
-    let parseFile = await findOne(sha, File, token, {
-      key: 'sha',
-      key2: 'studyId',
-      val2: study.id
-    })
-
-    if (parseFile) console.log(`Referencing ${file} (size ${size})`)
-
-    const fileObj = new File()
-    if (!parseFile) {
-      if (size === 0) {
-        await fileObj.save({ file: null, name: file, size, sha, author: pkg.author },
-          { sessionToken: token })
-        return resolve(fileObj)
-      }
-
-      if (size > 0) {
-        _debug(debug, `Uploading ${file} (size ${size})`)
-
-        try {
-          const contentLength = Buffer.byteLength(binary)
-          const bar = new ProgressBar(`> Uploading ${file} [:bar] :percent :etas`, {
-            width: 40,
-            complete: '=',
-            incomplete: '',
-            total: 100
-          })
-
-          const str = progress({ length: contentLength, time: 100 })
-
-          str.on('progress', (p) => {
-            bar.update(p.percentage / 100)
-          })
-
-          const body = fs
-            .createReadStream(path.join(dir, file))
-            .pipe(str)
-
-          const url = debug ? 'http://localhost:8080/parse' : secrets.PARSE_SERVER_URL
-          const res = await fetch(`${url}/files/${file}-${sha}`, {
-            method: 'POST',
-            headers: {
-              // 'Content-Type': 'text/plain',
-              'X-Parse-Application-Id': secrets.PARSE_APP_ID,
-              'X-Parse-REST-API-Key': secrets.PARSE_FILE_KEY,
-              'X-Parse-Session-Token': token
-            },
-            body
-          })
-
-          const _upload = await res.json()
-          if (Object.prototype.hasOwnProperty.call(_upload, 'error')) {
-            return reject(new Error(_upload.error))
-          }
-
-          _upload.__type = 'File'
-          parseFile = Parse.File.fromJSON(_upload)
-        } catch (e) {
-          reject(e)
-        }
-      }
-
-      const s = wait(`Finalizing ${file}`)
-      try {
-        await fileObj.save({
-          file: parseFile,
-          name: file,
-          size,
-          studyId: study.id,
-          study,
-          sha,
-          author: pkg.author },
-        { sessionToken: token })
-        s()
-        resolve(fileObj)
-      } catch (e) {
-        reject(e)
-      }
-    } else {
-      resolve(parseFile)
-      // parseFile = Parse.File.fromJSON(parseFile.toJSON().file)
-    }
-  })
-}
+const studyJSON = require('./get-study-json')
+const { fileMapHash } = require('./utils/hash')
+const { getFileList } = require('./utils/get-file-map')
+const { versionHash } = require('./utils/hash')
 
 const createVersion = async (pkg, dir, token, message, { debug = false } = {}) => {
-  // if no study.json we cant make a version
+  delete pkg._version // eslint-disable-line
   await lifecycle(pkg, 'preversion', dir, true)
 
-  // get the study from server if it exists, throwENOENT if not
-  // then make relation to add version too
-  let s = wait(`Fetching study details`)
-  const study = await findOne(pkg.name, Study, token, { throwENOENT: true })
-  const studyVersions = study.relation('versions')
-  s()
-
-  s = wait(`Initializing version`)
-  // create a new version and files relation
-  const version = new Version()
-  version.set('message', message)
-  const versionFiles = version.relation('files')
-  const fileMap = {}
-
-  // all this setting will be ignored if any errors happen since
-  // the saves happen at the end of this function
-  version.set('metadata', pkg.metadata || {})
-  version.set('tags', pkg.tags || [])
-  version.set('filesWhitelist', pkg.files || [])
-  version.set('scripts', pkg.scripts || {})
-  version.set('repository', await getGit())
-  // get all the files in this dir, obeying the ignore rules etc
   const files = await getFileList(dir, pkg, { debug })
-  const main = await resolveMain(files, pkg)
-  version.set('main', main)
-  s()
-  s = wait(`Hashing files`)
   const versionSha = versionHash(files, message, { debug })
-  s()
-  s = wait(`Creating unique version`)
 
-  const existingVersion = await findOne(versionSha, Version, token, {
-    key: 'sha',
-    debug,
-    key2: 'study',
-    val2: study
-  })
-  s()
+  const hiddenDir = path.join(dir, '.kyso')
+  const tarPath = path.join(hiddenDir, `upload-${versionSha}.tgz`)
+  await pify(mkdirp)(hiddenDir)
+  await tar.c({ file: tarPath }, files.map(f => f.file))
 
-  if (existingVersion) {
-    const err = new Error(`
-A version with the same sha exists, meaning no files have changed.
-The clashing version is:
-commit: ${existingVersion.get('sha')}
-message: ${existingVersion.get('message')}`)
-    err.userError = true
-    throw err
+  const url = debug ? 'http://localhost:8080' : secrets.PARSE_SERVER_URL.replace('/parse', '')
+  const headers = {
+    'X-Parse-Application-Id': secrets.PARSE_APP_ID,
+    'X-Parse-REST-API-Key': secrets.PARSE_FILE_KEY,
+    'X-Parse-Session-Token': token,
   }
 
-  version.set('sha', versionSha)
-  // pkg._version = `${pkg.author}/${pkg.name}#${versionSha}`
-  // studyJSON.merge(dir, pkg)
-  // lets keep a copy of the whole package in case there's any extra stuff the user wants
-  version.set('pkg', pkg)
+  const bar = new ProgressBar(`> Uploading version [:bar] :percent :etas`, {
+    width: 40,
+    complete: '=',
+    incomplete: '',
+    total: 100
+  })
 
-  const funcs = Array.from(files).map((file) => () => upload(study, token, debug, dir, pkg, file))
+  const contentLength = (await fs.stat(tarPath)).size
+  const str = progress({ length: contentLength, time: 100 })
+  str.on('progress', p => bar.update(p.percentage / 100))
+  const stream = fs.createReadStream(tarPath).pipe(str)
+  let s = () => {}
+  stream.on('finish', () => { s = wait(`Saving version`) })
 
-  const fileObjs = await serial(funcs)
-
-  s = wait(`Adding uploaded files to version`)
-  versionFiles.add(fileObjs)
+  const fileMap = {}
   files.forEach(({ sha, file }) => {
     const mapSha = fileMapHash(sha, file)
     fileMap[mapSha] = file
   })
 
-  // if everything good, then save version and study, add version to study
-  // fileMap is an object with all the sha's and relative file paths
-  version.set('fileMap', fileMap)
-  s()
-  s = wait(`Saving version`)
-  version.set('author', cfg.read().nickname)
-  version.set('studyId', study.id)
-  version.set('study', study)
-  await version.save(null, { sessionToken: token })
-  _debug(debug, `Adding version to study.`)
-  studyVersions.add(version)
-  s()
-  s = wait(`Saving study`)
-  await study.save(null, { sessionToken: token })
-  s()
-  await lifecycle(pkg, 'postversion', dir, true)
-  return version
-}
+  const body = {
+    sha: versionSha,
+    message,
+    pkg,
+    repository: await getGit(),
+    main: await resolveMain(files, pkg),
+    filename: `upload-${versionSha}.tgz`,
+    fileMap
+  }
 
+  headers.body = JSON.stringify(body)
+  const res = await fetch(`${url}/upload`, { method: 'POST', body: stream, headers })
+  const response = await res.json()
+
+  s()
+  if (response.hasOwnProperty('error')) { // eslint-disable-line
+    const err = new Error(response.error)
+    err.userError = true
+    throw err
+  }
+
+  await lifecycle(pkg, 'postversion', dir, true)
+  console.log('Version saved.')
+  return studyJSON.merge(dir, { _version: versionSha })
+}
 
 module.exports = createVersion

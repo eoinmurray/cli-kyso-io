@@ -174,8 +174,7 @@ module.exports = class Kyso {
       throw error
     }
 
-    const version = await createVersion(this.pkg, this.dir, this._token, message, { debug: this.debug }) // eslint-disable-line
-    return studyJSON.merge(this.dir, { _version: version.get('sha') })
+    return await createVersion(this.pkg, this.dir, this._token, message, { debug: this.debug }) // eslint-disable-line
   }
 
   async currentVersion(dest) {
