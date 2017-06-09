@@ -66,7 +66,7 @@ const createVersion = async (pkg, dir, token, message, { debug = false } = {}) =
   }
 
   headers.body = JSON.stringify(body)
-  const res = await fetch(`${url}/upload`, { method: 'POST', body: stream, headers })
+  const res = await fetch(`${url}/create-version`, { method: 'POST', body: stream, headers })
   const response = await res.json()
 
   s()
