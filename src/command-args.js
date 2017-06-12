@@ -27,9 +27,10 @@ module.exports = async () => {
 
   if (!config.token) {
     try {
-      token = await login()
+      token = await login({ debug: argv.debug, url: apiUrl })
     } catch (err) {
-      error(`Authentication error - ${err.message}`)
+      // error(`Authentication error - ${err.message}`)
+      console.error(err)
       exit(1)
     }
   }
