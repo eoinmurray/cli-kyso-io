@@ -32,13 +32,16 @@ const help = async () => {
 
       This will list all the potential conflicts in the merge
 
-    ${chalk.gray(`3.`)} ${chalk.cyan(`$ kyso merge apply`)}
+    ${chalk.gray(`3.`)} ${chalk.cyan(`$ kyso merge diff notebook.ipynb`)} or ${chalk.cyan(`$ kyso merge diff-web notebook.ipynb`)}
 
-      This will do a 3-way merge of all files (including intelligent merging of Jupyter notebooks)
+      diff: Shows the diff of a file listed in the conflict list in the console
+      diff-web: Shows the diff of the files in a web GUI
 
-    ${chalk.gray(`4.`)} ${chalk.cyan(`$ kyso merge ls`)}
+    ${chalk.gray(`4.`)} ${chalk.cyan(`$ kyso merge apply`)} or ${chalk.cyan(`$ kyso merge apply-web`)}
 
-      This will list the actual conflicts resulting from the merge
+      This will do a 3-way merge of all files (including intelligent merging of Jupyter notebooks).
+      You can keep using ${chalk.cyan(`$ kyso merge ls`)} to check for conflicts as you fix them.
+      Use ${chalk.cyan(`$ kyso merge apply-web`)} to open up a web-gui for merging Jupyter notebooks.
 `
   )
 }
@@ -72,6 +75,28 @@ const pullMerge = async (kyso, args) => {
   await kyso.pullMerge(studyName, teamName, dest, { versionSha })
   const elapsed_ = ms(new Date() - start_)
   console.log(`> Downloaded merge to .kyso/merge ${chalk.gray(`[${elapsed_}]`)}`)
+  return true
+}
+
+const diff = async (kyso, args) => {
+  if (args.length === 0) {
+    error('Invalid number of arguments')
+    return exit(1)
+  }
+
+  const name = String(args[0])
+  await kyso.diff(name)
+  return true
+}
+
+const diffWeb = async (kyso, args) => {
+  if (args.length === 0) {
+    error('Invalid number of arguments')
+    return exit(1)
+  }
+
+  const name = String(args[0])
+  await kyso.diffWeb(name)
   return true
 }
 
@@ -123,6 +148,29 @@ const applyMerge = async (kyso) => {
 }
 
 
+const applyMergeWeb = async (kyso) => {
+  const start_ = new Date()
+  const conflicts = await kyso.applyMergeWeb()
+  const elapsed_ = ms(new Date() - start_)
+  const header = [['', 'conflicted files'].map(s => chalk.dim(s))]
+  let out = null
+  if (conflicts && conflicts.length !== 0) {
+    out = table(header.concat(
+      conflicts.map(t => ['', `${t.name}`])
+      ), {
+        align: ['l', 'l', 'l', 'l', 'l', 'l'],
+        hsep: ' '.repeat(2),
+        stringLength: strlen
+      }
+    )
+  }
+
+  console.log(`> Applied merge ${chalk.gray(`[${elapsed_}]`)}`)
+  if (out) { console.log(`\n${out}\n`) }
+  return true
+}
+
+
 (async () => {
   try {
     const { args, argv, subcommand, token, apiUrl } = await getCommandArgs()
@@ -151,8 +199,19 @@ const applyMerge = async (kyso) => {
       return await applyMerge(kyso)
     }
 
-    // return await merge(kyso, [subcommand].concat(args))
-    // error('Please specify a valid subcommand: ls | create | rm | help')
+    if (subcommand === 'apply-web') {
+      return await applyMergeWeb(kyso)
+    }
+
+    if (subcommand === 'diff') {
+      return await diff(kyso, args)
+    }
+
+    if (subcommand === 'diff-web') {
+      return await diffWeb(kyso, args)
+    }
+
+
     return help()
   } catch (err) {
     return handleError(err)

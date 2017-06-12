@@ -6,6 +6,7 @@ const createVersion = require('./create-version')
 const createStudy = require('./create-study')
 const currentVersion = require('./current-version')
 const { merge, lsConflicts } = require('./merge')
+const { diff, diffWeb } = require('./diff')
 const studyJSON = require('./get-study-json')
 const getSVF = require('./get-svf')
 const clone = require('./clone')
@@ -284,6 +285,24 @@ module.exports = class Kyso {
     const target = path.join('.kyso', 'merge', `target`)
     const base = path.join('.kyso', 'merge', `base`)
     return merge(target, process.cwd(), base, { debug: this.debug })
+  }
+
+  async applyMergeWeb() {
+    const target = path.join('.kyso', 'merge', `target`)
+    const base = path.join('.kyso', 'merge', `base`)
+    return merge(target, process.cwd(), base, { debug: this.debug, web: true, canDelete: false })
+  }
+
+  async diff(name) {
+    const target = path.join('.kyso', 'merge', `target`, name)
+    const currentFile = path.join(process.cwd(), name)
+    return diff(target, currentFile, { debug: this.debug })
+  }
+
+  async diffWeb(name) {
+    const target = path.join('.kyso', 'merge', `target`, name)
+    const currentFile = path.join(process.cwd(), name)
+    return diffWeb(target, currentFile, { debug: this.debug })
   }
 
   async lsConflicts(dest) {

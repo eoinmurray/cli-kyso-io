@@ -45,7 +45,7 @@ const currentVersion = async (dir, pkg, token, { debug = false } = {}) => {
 
   s = wait(`Fetching last version and files`)
   const { version, files: remoteFiles } = await getSVF(pkg.name, pkg.author, token,
-    { versionSha: pkg._version, debug: this.debug })
+    { versionSha: pkg._version, debug })
 
   s()
 

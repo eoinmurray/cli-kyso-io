@@ -69,6 +69,7 @@
     "ignore": "^3.2.7",
     "minimist": "^1.2.0",
     "mkdirp": "^0.5.1",
+    "moment": "^2.18.1",
     "ms": "^1.0.0",
     "node-fetch": "^1.7.1",
     "node-version": "^1.0.0",

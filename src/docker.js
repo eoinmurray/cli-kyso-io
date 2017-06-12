@@ -68,6 +68,13 @@ module.exports = class {
     if (this.image === ".") {
       console.log(`\nRebuilding image\n`)
       await this.build()
+    } else {
+      const images = await this.docker.listImages()
+      const tags = [].concat.apply([], images.map(image => image.RepoTags)) // eslint-disable-line
+
+      if (!(tags.includes('kyso/kyso-jupyter') || tags.includes('kyso/kyso-jupyter:latest'))) {
+        return console.log(`kyso/kyso-jupyter image not installed. Run 'docker pull kyso/kyso-jupyter'`)
+      }
     }
 
     // https://docs.docker.com/engine/api/v1.27/#operation/ContainerCreate

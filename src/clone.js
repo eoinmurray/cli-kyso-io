@@ -31,6 +31,12 @@ const download = async (url, dest) => new Promise(async (resolve, reject) => { /
 })
 
 module.exports = async (study, version, files, wd, { target = null, force = false, debug = false, throwExists = true } = {}) => { // eslint-disable-line
+  if (!study) {
+    const e = new Error(`Study has no files.`)
+    e.userError = true
+    throw e
+  }
+
   const studyDir = path.join(wd, target || study.get('name'))
   try {
     await fs.stat(studyDir)

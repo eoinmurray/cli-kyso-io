@@ -3,7 +3,7 @@ const pify = require('pify')
 const mkdirp = require('mkdirp')
 const rimraf = require('rimraf')
 const path = require('path')
-const { mergeLines, mergeJupyter } = require('./utils/merge')
+const { mergeLines, mergeJupyter, mergeJupyterWeb } = require('./utils/merge')
 const { getFileMap } = require('./utils/get-file-map')
 const _debug = require('./utils/output/debug')
 
@@ -12,7 +12,7 @@ const mapOpts = {
   base64: false
 }
 
-const merge = async (src, target, base, { debug = null, canDelete = true } = {}) => {
+const merge = async (src, target, base, { web = false, debug = null, canDelete = true } = {}) => {
   const srcMap = await getFileMap(path.resolve(src), null, mapOpts)
   const targetMap = await getFileMap(path.resolve(target), null, mapOpts)
   const baseMap = await getFileMap(path.resolve(base), null, mapOpts)
@@ -39,7 +39,7 @@ const merge = async (src, target, base, { debug = null, canDelete = true } = {})
     _debug(debug, `Conflict ${srcFile.name}`)
     const baseFile = baseMap[srcFile.name]
     conflicts.push(targetFile)
-    return mergeFile(srcFile.path, targetFile.path, baseFile.path, { debug })
+    return mergeFile(srcFile.path, targetFile.path, baseFile.path, web)
   }))
 
   // delete the merge folder to signify that we are done
@@ -48,7 +48,6 @@ const merge = async (src, target, base, { debug = null, canDelete = true } = {})
   }
   return conflicts
 }
-
 
 const lsConflicts = async (src, target, { debug = null } = {}) => {
   const targetMap = await getFileMap(path.resolve(target), null, mapOpts)
@@ -96,7 +95,7 @@ const copyFile = async (src, target) => {
 }
 
 
-const mergeFile = async (src, target, base) => {
+const mergeFile = async (src, target, base, web = false) => {
   let output = ""
   const targetContent = await fs.readFile(target, 'utf-8')
   if (targetContent.includes('<<<<<<<') || targetContent.includes('>>>>>>>')) {
@@ -106,7 +105,11 @@ const mergeFile = async (src, target, base) => {
 
   if (src.endsWith('.ipynb')) {
     const out = path.join(path.dirname(target), `out-${path.basename(target)}`)
-    await mergeJupyter(base, src, target, out)
+    if (web) {
+      await mergeJupyterWeb(base, src, target, 'nbdime merge-web')
+      return false
+    }
+    await mergeJupyter(base, src, target, out, web ? 'nbdime merge-web' : 'nbdime merge')
     await fs.writeFile(target, await fs.readFile(out))
     await fs.unlink(out)
     return false

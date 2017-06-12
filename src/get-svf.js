@@ -1,55 +1,20 @@
 const Parse = require('parse/node')
-const _debug = require('./utils/output/debug')
+const { fileMapHash } = require('./utils/hash')
 
-const Study = Parse.Object.extend('Study')
+module.exports = async (studyname, author, token, { versionSha = null } = {}) => {
+  const { study, versions, files } = await Parse.Cloud.run('getStudyComplete',
+    { author, studyname, limit: 1, sha: versionSha }, { sessionToken: token })
 
-module.exports = async (studyName, author, token, { versionSha = null, debug = null } = {}) => {
-  const query = new Parse.Query(Study)
-  query.equalTo('name', studyName)
-  query.equalTo('author', author)
+  if (files.length) {
+    const version = versions[0]
+    const shas = Object.keys(version.get('fileMap'))
 
-  _debug(debug, `Fetching ${author}/${studyName}`)
-  const results = await query.find({ sessionToken: token })
-  if (results.length === 0) {
-    const error = new Error(`No Study called ${author}/${studyName}, or you don't have permission.`)
-    error.userError = true
-    throw error
-  }
-
-  _debug(debug, `Got ${author}/${studyName}`)
-  const study = results[0]
-
-  const versionsQuery = study.relation('versions').query()
-
-  if (versionSha) {
-    _debug(debug, `Fetching version with sha ${versionSha}`)
-    versionsQuery.startsWith('sha', versionSha)
-  } else {
-    versionsQuery.limit(1)
-    versionsQuery.descending('createdAt')
-  }
-
-  const versions = await versionsQuery.find({ sessionToken: token })
-
-  if (!versions.length) {
-    let err = new Error(`No versions of ${study.get('name')} found`)
-    if (versionSha) {
-      err = new Error(`No matching versions of ${study.get('name')} found`)
+    return {
+      study,
+      version,
+      files: files.filter(f => shas.includes(fileMapHash(f.get('sha'), f.get('name'))))
     }
-    err.userError = true
-    throw err
   }
 
-  const version = versions[0]
-
-  const fileQuery = version.relation('files').query()
-  const files = await fileQuery.find({ sessionToken: token })
-
-  if (!files.length) {
-    const err = new Error(`No files in ${study.get('name')} version ${version.get('sha').slice(0, 6)} found`)
-    err.userError = true
-    throw err
-  }
-
-  return { study, version, files }
+  return { study: null, version: null, files: [] }
 }

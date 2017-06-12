@@ -4,7 +4,7 @@ const { handleError } = require('../src/error')
 const opn = require('opn')
 
 const openDocs = () => {
-  await opn(`https://kyso.io/docs`)
+  opn(`https://kyso.io/docs`)
 }
 
 (async () => {

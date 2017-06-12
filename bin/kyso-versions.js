@@ -2,6 +2,7 @@
 const chalk = require('chalk')
 const table = require('text-table')
 const ms = require('ms')
+const moment = require('moment')
 const { eraseLines } = require('ansi-escapes')
 const promptBool = require('../src/utils/input/prompt-bool')
 const getCommandArgs = require('../src/command-args')
@@ -104,7 +105,6 @@ const ls = async (kyso, args) => {
 
   versionList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
-  const current = new Date()
   const header = [
     ['current', 'created', 'version (6-digits)', 'message'].map(s => chalk.dim(s))
   ]
@@ -113,7 +113,7 @@ const ls = async (kyso, args) => {
   if (versionList.length !== 0) {
     out = table(header.concat(
         versionList.map(t => {
-          const time = chalk.gray(`${ms(current - new Date(t.createdAt))} ago`)
+          const time = chalk.gray(`${moment(new Date(t.createdAt)).format('HH:mm DD-MM-YY')}`)
 
           let star = ''
           if (currentVersion && t.get('sha') === currentVersion.get('sha') && !isDirty) {
