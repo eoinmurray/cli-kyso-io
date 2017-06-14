@@ -218,7 +218,7 @@ module.exports = class Kyso {
 
   async clone(studyName, author, { versionSha = null, target = null } = {}) {
     // Note: target is relative
-    const s = wait(`Retrieving details of ${author}/${studyName}`)
+    const s = wait(`Retrieving details of ${author}/${studyName}#${versionSha}`)
     const { study, version, files } = await getSVF(studyName, author, this._token,
       { versionSha, debug: this.debug })
     s()
@@ -246,6 +246,16 @@ module.exports = class Kyso {
   }
 
   async pullMerge(studyName, author, dest, { versionSha = null }) {
+    const { version, isDirty } = await currentVersion(
+      process.cwd(), this.pkg, this._token, { debug: this.debug })
+    const currVersion = version
+
+    if (isDirty) {
+      const err = new Error('Directory has changes. Can only merge between clean versions. Please push and try again.')
+      err.userError = true
+      throw err
+    }
+
     let s = wait(`Retrieving details current study`)
     const currentStudy = await findOne(this.pkg.name, Study, this._token, { throwENOENT: true })
     s()
@@ -259,7 +269,7 @@ module.exports = class Kyso {
     s()
 
     s = wait(`Calculating the ancestor version`)
-    const baseVersion = await getCommonVersion(currentStudy, targetStudy, this._token, { debug: this.debug }) // eslint-disable-line
+    const baseVersion = await getCommonVersion(currentStudy, targetStudy, currVersion, targetVersion, this._token, { debug: this.debug }) // eslint-disable-line
     s()
     _debug(this.debug, `Target version: ${targetVersion.get('sha')}`)
     _debug(this.debug, `Base version: ${baseVersion.get('sha')}`)

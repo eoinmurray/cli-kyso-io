@@ -38,18 +38,15 @@ module.exports = async (study, version, files, wd, { target = null, force = fals
   }
 
   const studyDir = path.join(wd, target || study.get('name'))
-  try {
-    await fs.stat(studyDir)
+
+  const exists = await fs.pathExists(studyDir)
+  if (exists && throwExists) {
     if (throwExists) {
       const e = new Error(`Directory ${studyDir} already exists.`)
       e.userError = true
       throw e
     } else {
-      if(!force) return // eslint-disable-line
-    }
-  } catch (e) {
-    if (e.code !== 'ENOENT') {
-      throw e
+     if(!force) return // eslint-disable-line
     }
   }
 

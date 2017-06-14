@@ -1,6 +1,6 @@
 const _debug = require('./utils/output/debug')
 
-module.exports = async (study1, study2, token, { debug = null } = {}) => {
+module.exports = async (study1, study2, currentVersion, targetVersion, token, { debug = null } = {}) => {
   _debug(debug, `Finding common origin between ${study1.get('name')} and ${study2.get('name')}`)
 
   const versionsQuery1 = study1.relation('versions').query()
@@ -11,8 +11,12 @@ module.exports = async (study1, study2, token, { debug = null } = {}) => {
   const versions1 = await versionsQuery1.find({ sessionToken: token })
   const versions2 = await versionsQuery2.find({ sessionToken: token })
 
-  const ids1 = versions1.map(v => v.id)
-  const ids2 = versions2.map(v => v.id)
+  const ids1 = versions1
+    .map(v => v.id)
+    .filter(id => id !== currentVersion.id && id !== targetVersion.id)
+  const ids2 = versions2
+    .map(v => v.id)
+    .filter(id => id !== currentVersion.id && id !== targetVersion.id)
 
   const commons = ids1.filter(id => ids2.includes(id))
   if (commons.length > 0) {

@@ -15,17 +15,17 @@ const bucket = (local, remote) => {
 
   localKeys.forEach(key => {
     if (!remoteKeys.includes(key)) {
-      return removed.push({ name: key, sha: remote[key] })
+      return added.push({ name: key, sha: remote[key] || '' })
     }
     if (remote[key] === local[key]) {
-      return unchanged.push({ name: key, sha: remote[key] })
+      return unchanged.push({ name: key, sha: remote[key] || '' })
     }
-    return modified.push({ name: key, sha: remote[key] })
+    return modified.push({ name: key, sha: remote[key] || '' })
   })
 
   remoteKeys.forEach(key => {
     if (!localKeys.includes(key)) {
-      added.push({ name: key, sha: remote[key] })
+      removed.push({ name: key, sha: remote[key] || '' })
     }
   })
 
