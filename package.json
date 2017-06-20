@@ -1,6 +1,6 @@
 {
   "name": "kyso",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "description": "Kyso command line interface",
   "repository": "eoinmurray/cli-kyso-io",
   "author": "eoinmurray <eoin@kyso.io>",
@@ -30,9 +30,9 @@
     ]
   },
   "engines": {
-    "node" : ">=8.0.0"
+    "node": ">=8.0.0"
   },
-  "engineStrict" : true,
+  "engineStrict": true,
   "dependencies": {
     "ansi": "^0.3.1",
     "ansi-escapes": "^1.4.0",
