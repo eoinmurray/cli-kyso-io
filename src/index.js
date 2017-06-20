@@ -189,7 +189,7 @@ module.exports = class Kyso {
       throw error
     }
 
-    const fullname = `${cfg.read().nickname}/${studyName || this.pkg.name}`
+    const fullname = `${this.pkg.author}/${studyName || this.pkg.name}`
     const study = await findOne(fullname, Study, this._token,
       { throwENOENT: true, key: 'fullname' })
     const query = await study.relation('versions').query()
