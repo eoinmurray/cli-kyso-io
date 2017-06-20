@@ -153,9 +153,9 @@ async function readConfirmation(_team) {
       return await ls(kyso, args)
     }
 
-    if (subcommand === 'rm' || subcommand === 'remove') {
-      return await rm(kyso, args)
-    }
+    // if (subcommand === 'rm' || subcommand === 'remove') {
+    //   return await rm(kyso, args)
+    // }
 
     if (subcommand === 'create') {
       return await create(kyso, args)

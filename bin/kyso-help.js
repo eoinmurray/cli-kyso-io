@@ -27,9 +27,7 @@ const help = () => {
     login                   Authenticates this device
     studies                 Manage your studies
     versions                Manage your versions
-    invites                 Manage your invites
     teams                   Manage your teams
-    tags                    Add tags to the current study
     docs                    Opens the Kyso documentation in a web browser
     browse                  Opens the current study in a web browser
 

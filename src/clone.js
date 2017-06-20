@@ -32,7 +32,7 @@ const download = async (url, dest) => new Promise(async (resolve, reject) => { /
 
 module.exports = async (study, version, files, wd, { target = null, force = false, debug = false, throwExists = true } = {}) => { // eslint-disable-line
   if (!study) {
-    const e = new Error(`Study has no files.`)
+    const e = new Error(`This study does not exist or you dont have access.`)
     e.userError = true
     throw e
   }

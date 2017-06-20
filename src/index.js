@@ -189,8 +189,9 @@ module.exports = class Kyso {
       throw error
     }
 
-    const study = await findOne(studyName || this.pkg.name, Study, this._token,
-      { throwENOENT: true })
+    const fullname = `${cfg.read().nickname}/${studyName || this.pkg.name}`
+    const study = await findOne(fullname, Study, this._token,
+      { throwENOENT: true, key: 'fullname' })
     const query = await study.relation('versions').query()
     query.descending('createdAt')
     const versions = await query.find({ sessionToken: this._token })
@@ -257,7 +258,9 @@ module.exports = class Kyso {
     }
 
     let s = wait(`Retrieving details current study`)
-    const currentStudy = await findOne(this.pkg.name, Study, this._token, { throwENOENT: true })
+    const fullname = `${cfg.read().nickname}/${studyName || this.pkg.name}`
+    const currentStudy = await findOne(fullname, Study, this._token,
+      { throwENOENT: true, key: 'fullname' })
     s()
 
     s = wait(`Retrieving details of ${author}/${studyName}`)
