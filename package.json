@@ -1,6 +1,6 @@
 {
   "name": "kyso",
-  "version": "0.4.8",
+  "version": "0.4.9",
   "description": "Kyso command line interface",
   "repository": "eoinmurray/cli-kyso-io",
   "author": "eoinmurray <eoin@kyso.io>",
