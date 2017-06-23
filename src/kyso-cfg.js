@@ -33,6 +33,7 @@ function merge(data) {
 }
 
 module.exports = {
+  file,
   setConfigFile,
   read,
   merge

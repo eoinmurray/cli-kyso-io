@@ -2,31 +2,31 @@ const chalk = require('chalk')
 const fetch = require('node-fetch')
 const { validate } = require('email-validator')
 const readEmail = require('email-prompt')
-const secrets = require('./secrets')
 const cfg = require('./kyso-cfg')
+const secrets = require('./secrets')
 const wait = require('../src/utils/output/wait')
 const textInput = require('./utils/input/text')
 
-async function requestPasswordlessLogin(email) {
-  const res = await fetch(`${secrets.AUTH0_SERVER_URL}/passwordless/start`, {
-    method: 'post',
+async function requestPasswordlessLogin(url, email) {
+  const res = await fetch(`${url}/functions/passwordless`, {
+    method: 'POST',
     headers: {
-      'Content-Type': 'application/json'
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'X-Parse-Application-Id': secrets.PARSE_APP_ID
     },
-    body: JSON.stringify({
-      client_id: secrets.AUTH0_CLIENT_ID,
-      connection: 'email',
-      email: `${email}`,
-      send: 'code',
-      authParams: {
-        scope: 'openid',
-      }
-    })
+    body: JSON.stringify({ email })
   })
 
-  if (res.status !== 200) { throw new Error(`${res.status}, ${res.statusText}`) }
   const body = await res.json()
-  return body
+  if (body.error) {
+    throw new Error(body.error.message || body.error)
+  }
+  if (body.success) {
+    return body
+  }
+
+  return false
 }
 
 async function register(url, debug, { retryEmail = false } = {}) {
@@ -41,9 +41,8 @@ async function register(url, debug, { retryEmail = false } = {}) {
   if (!validate(email)) { return register({ retryEmail: true }) }
 
   let s = wait(`Sending verification email`)
-  await requestPasswordlessLogin(email)
+  await requestPasswordlessLogin(url, email)
   s()
-  //
   console.log(`> We have sent a verification code to ${chalk.bold(email)}.`)
   console.log('> Please enter the code to login.')
   const code = await textInput({ label: '- Code: ' })
@@ -80,5 +79,5 @@ module.exports = async ({ debug, url }) => {
   const loginData = await register(url, debug)
 
   cfg.merge(loginData)
-  return loginData.access_token
+  return loginData.token
 }

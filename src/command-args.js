@@ -4,7 +4,7 @@ const cfg = require('../src/kyso-cfg')
 const exit = require('../src/utils/exit')
 const { error } = require('../src/error')
 
-module.exports = async () => {
+module.exports = async ({ noLogin = false } = {}) => {
   const argv = minimist(process.argv.slice(2), {
     boolean: [
       'help',
@@ -27,7 +27,9 @@ module.exports = async () => {
 
   if (!config.token) {
     try {
-      token = await login({ debug: argv.debug, url: apiUrl })
+      if (!noLogin) {
+        token = await login({ debug: argv.debug, url: apiUrl })
+      }
     } catch (err) {
       // error(`Authentication error - ${err.message}`)
       console.error(err)

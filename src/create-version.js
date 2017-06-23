@@ -31,7 +31,6 @@ const createVersion = async (pkg, dir, token, message, { debug = false } = {}) =
   const url = debug ? 'http://localhost:8080' : secrets.PARSE_SERVER_URL.replace('/parse', '')
   const headers = {
     'X-Parse-Application-Id': secrets.PARSE_APP_ID,
-    'X-Parse-REST-API-Key': secrets.PARSE_FILE_KEY,
     'X-Parse-Session-Token': token,
   }
 
