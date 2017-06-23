@@ -6,7 +6,6 @@ const tar = require('tar')
 const fetch = require('node-fetch')
 const progress = require('progress-stream')
 const ProgressBar = require('progress')
-const secrets = require('./secrets')
 const lifecycle = require('./utils/lifecycle')
 const getGit = require('./utils/get-git')
 const resolveMain = require('./utils/resolve-main')
@@ -16,7 +15,7 @@ const { fileMapHash } = require('./utils/hash')
 const { getFileList } = require('./utils/get-file-map')
 const { versionHash } = require('./utils/hash')
 
-const createVersion = async (pkg, dir, token, message, { debug = false } = {}) => {
+const createVersion = async (pkg, dir, token, message, serverURL, { debug = false } = {}) => {
   delete pkg._version // eslint-disable-line
   await lifecycle(pkg, 'preversion', dir, true)
 
@@ -28,9 +27,9 @@ const createVersion = async (pkg, dir, token, message, { debug = false } = {}) =
   await pify(mkdirp)(hiddenDir)
   await tar.c({ file: tarPath }, files.map(f => f.file))
 
-  const url = debug ? 'http://localhost:8080' : secrets.PARSE_SERVER_URL.replace('/parse', '')
+  const url = serverURL.replace('/parse', '')
   const headers = {
-    'X-Parse-Application-Id': secrets.PARSE_APP_ID,
+    'X-Parse-Application-Id': 'api-kyso-io',
     'X-Parse-Session-Token': token,
   }
 

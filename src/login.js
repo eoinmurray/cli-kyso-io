@@ -3,7 +3,6 @@ const fetch = require('node-fetch')
 const { validate } = require('email-validator')
 const readEmail = require('email-prompt')
 const cfg = require('./kyso-cfg')
-const secrets = require('./secrets')
 const wait = require('../src/utils/output/wait')
 const textInput = require('./utils/input/text')
 
@@ -13,7 +12,7 @@ async function requestPasswordlessLogin(url, email) {
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
-      'X-Parse-Application-Id': secrets.PARSE_APP_ID
+      'X-Parse-Application-Id': 'api-kyso-io'
     },
     body: JSON.stringify({ email })
   })

@@ -10,7 +10,6 @@ const { diff, diffWeb } = require('./diff')
 const studyJSON = require('./get-study-json')
 const getSVF = require('./get-svf')
 const clone = require('./clone')
-const secrets = require('./secrets')
 const cfg = require('./kyso-cfg')
 
 const lifecycle = require('./utils/lifecycle')
@@ -21,7 +20,7 @@ const hardRejection = require('hard-rejection')
 
 hardRejection()
 
-Parse.initialize(secrets.PARSE_APP_ID)
+Parse.initialize('api-kyso-io')
 const Study = Parse.Object.extend('Study')
 const Team = Parse.Object.extend('Team')
 const Invite = Parse.Object.extend('Invite')
@@ -29,6 +28,7 @@ const Invite = Parse.Object.extend('Invite')
 module.exports = class Kyso {
   constructor({ url, token, debug = false, dir = process.cwd() }) {
     Parse.serverURL = url
+    this.serverURL = url
     this.parse = Parse
     this._token = token
     this.dir = dir
@@ -175,7 +175,7 @@ module.exports = class Kyso {
       throw error
     }
 
-    return await createVersion(this.pkg, this.dir, this._token, message, { debug: this.debug }) // eslint-disable-line
+    return await createVersion(this.pkg, this.dir, this._token, message, this.serverURL, { debug: this.debug }) // eslint-disable-line
   }
 
   async currentVersion(dest) {
