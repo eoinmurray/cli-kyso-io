@@ -47,6 +47,12 @@ const currentVersion = async (dir, pkg, token, { debug = false } = {}) => {
   const { version, files: remoteFiles } = await getSVF(pkg.name, pkg.author, token,
     { versionSha: pkg._version, debug })
 
+  if (!version) {
+    const error = new Error('This study has no versions yet.')
+    error.userError = true
+    throw error
+  }
+
   s()
 
   const versionSha = versionHash(localFiles, version.get('message'), { debug })

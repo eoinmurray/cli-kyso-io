@@ -5,8 +5,12 @@ module.exports = async (studyname, author, token, { versionSha = null } = {}) =>
     { author, studyname, limit: 1, sha: versionSha }, { sessionToken: token })
 
   if (study) {
-    const version = study.get('versionsArray')[0]
-    const files = version.get('filesArray')
+    let version = null
+    let files = null
+    if (study.get('versionsArray') && study.get('versionsArray').length) {
+      version = study.get('versionsArray')[0]
+      files = version.get('filesArray')
+    }
 
     return {
       study,

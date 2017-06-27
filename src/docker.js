@@ -16,6 +16,7 @@ module.exports = class {
     if (kyso && kyso.pkg && kyso.pkg.docker && kyso.pkg.docker.image) {
       this.image = kyso.pkg.docker.image
     }
+
     this.docker = new Docker()
     this.container = null
     this.started = false
@@ -52,12 +53,25 @@ module.exports = class {
   }
 
   async build() {
-    const stream = await this.docker.buildImage({ context: process.cwd(), src: ['Dockerfile'] }, {
-      t: `docker-image-${this.kyso.pkg.name}`
-    })
-    stream.pipe(dockerStream)
-    this.image = `docker-image-${this.kyso.pkg.name}`
-    return true
+    try {
+      const stream = await this.docker.buildImage({ context: process.cwd(), src: ['Dockerfile'] }, {
+        t: `kyso-user/${this.kyso.pkg.name}`
+      })
+      stream.pipe(dockerStream)
+      this.image = `kyso-user/${this.kyso.pkg.name}`
+      return true
+    } catch (err) {
+      if (err.code === 'ECONNREFUSED') {
+        const e = new Error('Docker is not installed or its not turned on.')
+        e.userError = true
+        throw e
+      }
+      throw err
+    }
+  }
+
+  async start(port = 8888) {
+    return this.run(port)
   }
 
   async run(port = 8888) {
@@ -68,12 +82,22 @@ module.exports = class {
     if (this.image === ".") {
       console.log(`\nRebuilding image\n`)
       await this.build()
+      console.log(`\nDone building image: ${this.image}\n`)
     } else {
-      const images = await this.docker.listImages()
-      const tags = [].concat.apply([], images.map(image => image.RepoTags)) // eslint-disable-line
+      try {
+        const images = await this.docker.listImages()
+        const tags = [].concat.apply([], images.map(image => image.RepoTags)) // eslint-disable-line
 
-      if (!(tags.includes('kyso/kyso-jupyter') || tags.includes('kyso/kyso-jupyter:latest'))) {
-        return console.log(`kyso/kyso-jupyter image not installed. Run 'docker pull kyso/kyso-jupyter'`)
+        if (!(tags.includes('kyso/kyso-jupyter') || tags.includes('kyso/kyso-jupyter:latest'))) {
+          return console.log(`kyso/kyso-jupyter image not installed. Run 'docker pull kyso/kyso-jupyter'`)
+        }
+      } catch (err) {
+        if (err.code === 'ECONNREFUSED') {
+          const e = new Error('Docker is not installed or its not turned on.')
+          e.userError = true
+          throw e
+        }
+        throw err
       }
     }
 
@@ -141,7 +165,7 @@ module.exports = class {
         throw err
       }
 
-      const template = `FROM kyso-jupyter
+      const template = `FROM kyso/kyso-jupyter
 USER root
 
 # here you can run extra things like pip install
