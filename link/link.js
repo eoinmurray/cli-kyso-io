@@ -1,0 +1,11 @@
+#!/usr/bin/env node
+
+try {
+  // eslint-disable-next-line import/no-unassigned-import
+  require('../bin/now.js') // eslint-disable-line
+} catch (err) {
+  if (err.code === 'ENOENT' && err.syscall === 'uv_cwd') {
+    console.error(`Current path doesn't exist!`)
+    process.exit(1)
+  }
+}

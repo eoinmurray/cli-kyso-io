@@ -1,0 +1,20 @@
+language: node_js
+node_js:
+  - node
+script: []
+before_deploy: "echo 'running pack for deployment' && npm run pack"
+deploy:
+  - provider: releases
+    api-key:
+      secure: vNRfLA/oOPbf595M8SSPS4+NG0VfJOPl+pQO/ixHZY3xrZrBE4yWAqKTywWcHYqoeqiDGyuiccZ0RIOu5kMLrIpqJlaNlBWVjJs+J15lLPFRJaNyBIzoGKdJ9lp0T8kqAVH1deNAAEpEAWkwFI+xJJitX09Q6yxi1S5FiX08zHYFv/sf7gJwotT6qaoPYAMCbqz036hjjCJdwM5fjlYz2GuRL0w2ybnyB5wh5xUJgoaJOIj/Hjwt/VZ7+15iYokarn2SwfiiezP+GfHFrVr4lpExTt1T3mEz77D/lu9dIsrDKm1Ycwa4lBzSov0BrG5KiDbmakOQ3G+EC5/+I6ScaTlsRzomJ8mF69id43XcAYmwxWgxxlGfmAKUGMQ6Z89NZv5y7jbFVHBHUGBtoIEAI8Em2En4Coh1ISJVW2UVxk+6OgVEC29R45EzzXr7SUY4ULPeNWZOwBn6k5lGmrDRA50QUFImIWsjoUVTKC4H7ekGZHpM1xONKzVV1C/Tsrd8RRlPWkNVWr1gJgsQv/wzkF9aRdEzVRQ0jlC6xPrW4xZcYCpxveEymTtgC1Qzo+JrUcLNyxlxRQOtNa006WUtmXzVU16qXRKFftN/t/cfzwxcidvv5Eefe+yw7Uc7lSwx/DT9Dozo9LfgLsDSTHFKZrds5tjd02HplUkgq1Pg7qg=
+    file_glob: true
+    file: packed/*
+    skip_cleanup: true
+    on:
+      tags: true
+after_script:
+  - npm install --global slackup
+  - npm run pack
+  - "./scripts/slack.js"
+notifications:
+  email: false
