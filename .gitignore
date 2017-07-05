@@ -7,3 +7,8 @@ Icon
 .ipynb_checkpoints
 packed
 download/dist
+kyso.egg-info
+build
+*.pyc
+*/*.pyc
+dist

@@ -1,14 +1,8 @@
 /* eslint-disable unicorn/no-process-exit */
-
-// Native
 import fs from 'fs'
 import path from 'path'
-
-// Packages
 import onDeath from 'death'
 import fetch from 'node-fetch'
-
-// Utilities
 import plusxSync from './chmod'
 import { disableProgress, enableProgress, info, showProgress, warn } from './log'
 

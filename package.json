@@ -4,6 +4,8 @@
   "description": "Kyso command line interface",
   "repository": "eoinmurray/cli-kyso-io",
   "author": "eoinmurray <eoin@kyso.io>",
+  "author_email": "eoin@kyso.io",
+  "url": "https://github/eoinmurray/cli-kyso-io",
   "license": "MIT",
   "scripts": {
     "postinstall": "node download/install.js",
@@ -11,7 +13,8 @@
     "link": "cd link && npm link",
     "pack": "pkg bin/kyso.js -c package.json -o packed/kyso",
     "webpack": "./node_modules/.bin/webpack --context download --config download/webpack.js",
-    "test": "ava"
+    "test": "ava",
+    "python_dist": "cp packed/kyso-* python/ ; python setup.py sdist ; rm python/kyso-*"
   },
   "pkg": {
     "scripts": [

@@ -1,6 +1,6 @@
 {
   "name": "kyso",
   "bin": {
-    "now": "link.js"
+    "kyso": "link.js"
   }
 }

@@ -20,7 +20,7 @@ if (!process.pkg) {
 
   if (update) {
     let message = `Update available! ${chalk.red(update.current)} → ${chalk.green(update.latest)} \n`
-    message += `Run ${chalk.magenta('npm i -g kyso')} to update!\n`
+    message += `Run ${chalk.magenta('npm i -g kyso')} or ${chalk.magenta('pip install --upgrade kyso')} to update!\n`
     message += `${chalk.magenta('Changelog:')} https://github.com/kyso/kyso-cli/releases/tag/${update.latest}`
 
     notifier.notify({ message })
