@@ -92,7 +92,7 @@ const rm = async (kyso, args) => {
 
   if (!_team) {
     const err = new Error(
-      `Team not found on this user account. Run ${chalk.dim('`now teams ls`')} to see your teams.`
+      `Team not found on this user account. Run ${chalk.dim('`kyso teams ls`')} to see your teams.`
     )
     err.userError = true
     throw err

@@ -41,8 +41,17 @@ const createVersion = async (pkg, dir, token, message, serverURL, { debug = fals
   })
 
   const contentLength = (await fs.stat(tarPath)).size
+
+  const mb = contentLength / 1000000.0
+  if (mb > 32) {
+    const err = new Error('Studies are currently limited to 32mb on the free plan.')
+    err.userError = true
+    throw err
+  }
+
   const str = progress({ length: contentLength, time: 100 })
   str.on('progress', p => bar.update(p.percentage / 100))
+
   const stream = fs.createReadStream(tarPath).pipe(str)
   let s = () => {}
   stream.on('finish', () => { s = wait(`Saving version`) })
@@ -65,6 +74,10 @@ const createVersion = async (pkg, dir, token, message, serverURL, { debug = fals
 
   headers.body = JSON.stringify(body)
   const res = await fetch(`${url}/create-version`, { method: 'POST', body: stream, headers })
+  if (res.status !== 200) {
+    const err = new Error(res.statusText)
+    throw err
+  }
   const version = await res.json()
 
   s()

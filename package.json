@@ -8,7 +8,8 @@
   "scripts": {
     "postinstall": "node download/install.js",
     "prepublish": "./node_modules/.bin/in-install || (npm run webpack && cp /dev/null download/dist/kyso)",
-    "link": "cd link && npm link",
+    "link": "cd link && npm link -d",
+    "unlink": "cd link && npm unlink",
     "pack": "pkg bin/kyso.js -c package.json -o packed/kyso",
     "webpack": "./node_modules/.bin/webpack --context download --config download/webpack.js",
     "test": "ava"

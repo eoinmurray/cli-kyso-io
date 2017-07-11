@@ -1,6 +1,10 @@
 {
   "name": "kyso",
+  "license": "MIT",
+  "description": "The command line interface for Kyso",
+  "repository": "eoinmurray/cli-kyso-io",
   "bin": {
-    "now": "link.js"
-  }
+    "kyso": "link.js"
+  },
+  "dependencies": {}
 }

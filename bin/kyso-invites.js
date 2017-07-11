@@ -88,7 +88,7 @@ const rm = async (kyso, args) => {
   const _invite = inviteList.find(d => (d.get('name') === _target))
 
   if (!_invite) {
-    const err = new Error(`Team not found on this user account. Run ${chalk.dim('`now invites ls`')} to see your invites.`)
+    const err = new Error(`Team not found on this user account. Run ${chalk.dim('`kyso invites ls`')} to see your invites.`)
     err.userError = true
     throw err
   }
