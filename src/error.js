@@ -16,8 +16,9 @@ function handleError(err) {
   }
 
   if (err.userError) {
-    return error(err.message)
+    return error(`Error! (${err.message})\n${err.stack || ''}`)
   }
+
   if (err.status === 500) {
     return error('Unexpected server error. Please retry.')
   }

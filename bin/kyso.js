@@ -53,7 +53,17 @@ const commands = new Set([
   'create',
   'push',
   'list',
-  'status'
+  'status',
+  'jupyter',
+  'dashboard',
+  'jupyter-http',
+  'python3',
+  'python',
+  'node',
+  'bash',
+  'bash-keep',
+  'extend',
+  'build'
 ])
 
 // here we can define aliases for the commands
@@ -64,6 +74,16 @@ const aliases = new Map([
   ['list', 'versions ls'],
   ['status', 'versions status'],
   ['start', 'run start'],
+  ['jupyter', 'docker jupyter'],
+  ['dashboard', 'docker dashboard'],
+  ['jupyter-http', 'docker jupyter-http'],
+  ['python3', 'docker python3'],
+  ['python', 'docker python'],
+  ['node', 'docker node'],
+  ['bash', 'docker bash'],
+  ['bash-keep', 'docker bash-keep'],
+  ['build', 'docker build'],
+  ['extend', 'docker extend'],
 ])
 
 // use at least the defaultCommand, which is help

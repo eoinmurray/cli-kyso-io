@@ -1,65 +1,181 @@
-const { spawn } = require('child_process')
-const { readFile, writeFile } = require('fs-extra')
-const studyJSON = require('./get-study-json')
-const { resolve: resolvePath } = require('path')
-const Stream = require('stream')
+const { spawnSync, spawn } = require('child_process')
 const Docker = require('dockerode')
+const path = require('path')
+const fs = require('fs-extra')
 const opn = require('opn')
-const dockerStream = require('./utils/output/docker-stream')
-
+const studyJSON = require('./get-study-json')
+const wait = require('./utils/output/wait')
+const cfg = require('./kyso-cfg')
+const { homedir } = require('os')
 
 module.exports = class {
   constructor(kyso) {
     this.kyso = kyso
+    this.image = 'kyso/jupyter'
 
-    this.image = 'kyso/kyso-jupyter'
-    if (kyso && kyso.pkg && kyso.pkg.docker && kyso.pkg.docker.image) {
+    const dockerFile = path.join(process.cwd(), `Dockerfile`)
+    if (fs.existsSync(dockerFile)) {
+      const dockerString = fs.readFileSync(dockerFile)
+      const line0 = dockerString.toString().split('\n')[0]
+      this.image = line0.slice(19).trim()
+    } else if (kyso && kyso.pkg && kyso.pkg.docker && kyso.pkg.docker.image) {
       this.image = kyso.pkg.docker.image
     }
-
-    this.docker = new Docker()
-    this.container = null
-    this.started = false
-    this.token = null
   }
 
-  parseToken(chunk) {
-    process.stdout.write(chunk)
-    if (chunk.includes('?token=')) {
-      // get the token
-      const lines = chunk.toString().split('\n')
-      lines.forEach(line => {
-        if (line.includes('?token=') && !line.includes('Notebook')) {
-          this.token = line.trim().split('?token=')[1]
-          this.open()
-        }
-      })
-    }
+  async pull() {
+    return spawnSync('docker', ['pull', this.image], { stdio: 'inherit' })
   }
 
-  stop() {
-    if (this.started) {
-      console.log(`docker stop ${this.container.id}`)
-      // this.container.stop()
-      spawn(`docker`, [`stop`, `${this.container.id}`], {
-        detached: true,
-        // stdio: 'ignore'
-      })
-      this.started = false
+  async run(args) {
+    await this.checkForImage()
+    if (this.image !== 'kyso/jupyter') {
+      console.log(`\n\nFound local Dockerfile. Starting ${this.image}\n\n`)
     }
+    const cmd = spawn('docker', args, { stdio: [0, 'pipe', 0] })
+    cmd.stdout.on('data', (chunk) => {
+      process.stdout.write(chunk)
+      if (chunk.includes('?token=')) {
+        const lines = chunk.toString().split('\n')
+        lines.forEach(line => {
+          if (line.includes('?token=') && !line.includes('Notebook')) {
+            opn(line.trim())
+          }
+        })
+      }
+      if (chunk.includes('Jupyter dashboard server listening on')) {
+        opn(`http://0.0.0.0:3000`)
+      }
+    })
+  }
 
-    process.removeListener('SIGTERM', this.stop)
-    process.removeListener('SIGINT', this.stop)
+  async bash(extraArgs) {
+    if (!extraArgs || extraArgs.length === 0) extraArgs = ['bash'] // eslint-disable-line
+    const cwd = process.cwd()
+    const args = ['run', '--rm', '-it', '-v', `${cwd}:/home/ds/notebooks`, '-p', '8888:8888', this.image]
+    return this.run(args.concat(extraArgs))
+  }
+
+  async bashKeep(extraArgs) {
+    await this.checkForImage()
+    if (!extraArgs || extraArgs.length === 0) extraArgs = ['bash'] // eslint-disable-line
+    const cwd = process.cwd()
+    const args = ['create', '-v', `${cwd}:/home/ds/notebooks`, this.image]
+    const re = await spawnSync('docker', args)
+    const containerId = `${re.stdout}`.trim()
+    await spawnSync('docker', ['start', containerId])
+    await spawnSync('docker', ['exec', '-it', containerId].concat(extraArgs), { stdio: 'inherit' })
+    await spawnSync('docker', ['stop', containerId], { stdio: 'inherit' })
+    const name = this.createImageName()
+    await spawnSync('docker', ['commit', '-m', extraArgs, containerId, name], { stdio: 'inherit' })
+    await spawnSync('docker', ['rm', containerId])
+    await studyJSON.merge(this.kyso.dir, { docker: { image: name } })
+  }
+
+  async jupyter(extraArgs) {
+    const cwd = process.cwd()
+    const args = ['run', '--rm', '-it', '-v', `${cwd}:/home/ds/notebooks`, '-p', '8888:8888', this.image]
+    return this.run(args.concat(extraArgs))
+  }
+
+  async dashboard(extraArgs) {
+    const cwd = process.cwd()
+    const args = ['run', '--rm', '-it', '-v', `${cwd}:/home/ds/notebooks`, '-p', '3000:3000', this.image, '/home/ds/scripts/dashboard.sh']
+    return this.run(args.concat(extraArgs))
+  }
+
+  async jupyterHttp(extraArgs) {
+    const cwd = process.cwd()
+    const args = ['run', '--rm', '-it', '-v', `${cwd}:/home/ds/notebooks`, '-p', '8889:8888', this.image, '/home/ds/scripts/jupyter-http.sh']
+    return this.run(args.concat(extraArgs))
+  }
+
+  async python3(extraArgs) {
+    const cwd = process.cwd()
+    const args = ['run', '--rm', '-it', '-v', `${cwd}:/home/ds/notebooks`, '-p', '8888:8888', this.image, 'python3']
+    return this.run(args.concat(extraArgs))
+  }
+
+  async python2(extraArgs) {
+    const cwd = process.cwd()
+    const args = ['run', '--rm', '-it', '-v', `${cwd}:/home/ds/notebooks`, '-p', '8888:8888', this.image, 'python2']
+    return this.run(args.concat(extraArgs))
+  }
+
+  async node(extraArgs) {
+    const cwd = process.cwd()
+    const args = ['run', '--rm', '-it', '-v', `${cwd}:/home/ds/notebooks`, '-p', '8888:8888', this.image, 'node']
+    return this.run(args.concat(extraArgs))
+  }
+
+  async default(extraArgs) {
+    const cwd = process.cwd()
+    const dockerFile = path.join(process.cwd(), `Dockerfile`)
+    let port = '8888'
+    if (fs.existsSync(dockerFile)) {
+      const dockerString = fs.readFileSync(dockerFile)
+      const lines = dockerString.toString().split('\n')
+      const exposeLine = lines.filter(line => line.startsWith('EXPOSE'))
+      if (exposeLine) {
+        port = exposeLine[0].slice(7).trim()
+      }
+    }
+    const args = ['run', '--rm', '-it', '-v', `${cwd}:/home/ds/notebooks`, '-p', `${port}:${port}`, this.image]
+    return this.run(args.concat(extraArgs))
   }
 
   async build() {
+    /*
+      TODO: make this more fault tolerant with reading the name
+    */
+    let s = () => {}
+    const dockerFile = path.join(process.cwd(), `Dockerfile`)
+    if (!fs.existsSync(dockerFile)) {
+      return console.log(`No Dockerfile`)
+    }
+
+    let name = this.createImageName()
     try {
-      const stream = await this.docker.buildImage({ context: process.cwd(), src: ['Dockerfile'] }, {
-        t: `kyso-user/${this.kyso.pkg.name}`
-      })
-      stream.pipe(dockerStream)
-      this.image = `kyso-user/${this.kyso.pkg.name}`
-      return true
+      const dockerString = fs.readFileSync(dockerFile)
+      const line0 = dockerString.toString().split('\n')[0]
+      name = line0.slice(19).trim()
+    } catch (e) {} // eslint-disable-line
+
+    s = wait(`Extending kyso/jupyter image into ${name}`)
+    const args = ['build', '-t', name, '.']
+    await spawnSync('docker', args, { stdio: 'inherit' })
+    s()
+    return console.log(`\n\nBuild finished. Run using 'kyso <jupyter | dashboard | python | jupyter-http>'`)
+  }
+
+  async extend() {
+    const dockerFile = path.join(process.cwd(), `Dockerfile`)
+    if (fs.existsSync(dockerFile)) {
+      return console.log(`Dockerfile already exists, not overwriting.`)
+    }
+
+    let template = `FROM kyso/jupyter\n\n# Add your commands here, example:\n# RUN pip install django\n`
+
+    if (fs.existsSync(path.join(process.cwd(), `requirements.txt`))) {
+      console.log(`requirements.txt exists, adding to Dockfile`)
+      template = `FROM kyso/jupyter\n\nADD requirements.txt /tmp/requirements.txt\nRUN pip3 install -r /tmp/requirements.txt --user`
+    }
+
+    template = `# kyso-image-name: ${this.createImageName()}\n${template}`
+
+    await fs.writeFile(dockerFile, template)
+    return console.log(`Wrote new Dockerfile at '${dockerFile}'.\nRun 'kyso build' to build.`)
+  }
+
+  async checkForImage() {
+    try {
+      const docker = new Docker()
+      const images = await docker.listImages()
+      const tags = [].concat.apply([], images.map(image => image.RepoTags)) // eslint-disable-line
+
+      if (!(tags.includes(this.image) || tags.includes(`${this.image}:latest`))) {
+        this.pull()
+      }
     } catch (err) {
       if (err.code === 'ECONNREFUSED') {
         const e = new Error('Docker is not installed or its not turned on.')
@@ -70,117 +186,20 @@ module.exports = class {
     }
   }
 
-  async start(port = 8888) {
-    return this.run(port)
-  }
-
-  async run(port = 8888) {
-    this.port = port
-    this.container = null
-    this.started = false
-    this.token = null
-    if (this.image === ".") {
-      console.log(`\nRebuilding image\n`)
-      await this.build()
-      console.log(`\nDone building image: ${this.image}\n`)
-    } else {
-      try {
-        const images = await this.docker.listImages()
-        const tags = [].concat.apply([], images.map(image => image.RepoTags)) // eslint-disable-line
-
-        if (!(tags.includes('kyso/kyso-jupyter') || tags.includes('kyso/kyso-jupyter:latest'))) {
-          return console.log(`kyso/kyso-jupyter image not installed. Run 'docker pull kyso/kyso-jupyter'`)
-        }
-      } catch (err) {
-        if (err.code === 'ECONNREFUSED') {
-          const e = new Error('Docker is not installed or its not turned on.')
-          e.userError = true
-          throw e
-        }
-        throw err
-      }
+  createImageName() {
+    if (this.kyso.pkg && this.kyso.pkg.author && this.kyso.pkg.name) {
+      return `kyso-local/${this.kyso.pkg.author}-${this.kyso.pkg.name}`
     }
-
-    // https://docs.docker.com/engine/api/v1.27/#operation/ContainerCreate
-    const createOpts = {
-      Image: this.image,
-      HostConfig: {
-        Binds: [
-          `${process.cwd()}:/home/ds/notebooks`
-        ],
-        PortBindings: {
-          "8888/tcp": [{ HostPort: `${port}` }]
-        },
-      },
-      AttachStdout: true,
-      AttachStderr: true
-    }
-
-    this.container = await this.docker.createContainer(createOpts)
-
-    process.once('exit', () => this.stop())
-    process.once('SIGINT', () => this.stop())
-    process.once('SIGTERM', () => this.stop())
-
-    const stream = await this.container.attach({
-      stream: true, stdout: true, stderr: true, tty: true
-    })
-
-    const stdout = new Stream.Writable({
-      write: (chunk, encoding, next) => {
-        this.parseToken(chunk)
-        next()
-      }
-    })
-
-    stream.pipe(stdout)
-    console.log(`\nStarting container ${this.container.id} exposed on port ${port}`)
-    this.started = true
-
+    const dir = path.basename(__dirname)
     try {
-      await this.container.start()
+      if (debug) {
+        const file = path.resolve(homedir(), '.kyso-dev.json')
+        cfg.setConfigFile(file)
+      }
+      const author = cfg.read().nickname
+      return `kyso-local/${author}-${dir}`
     } catch (e) {
-      if (e.json && e.json.message) {
-        if (!e.json.message.includes('port is already allocated')) {
-          throw e
-        }
-        stdout.end()
-        this.run(port + 1)
-      }
-    }
-  }
-
-  async open() {
-    if (this.token) opn(`http://localhost:${this.port}/?token=${this.token}`)
-  }
-
-  async init() {
-    try {
-      await readFile(resolvePath(this.kyso.dir, 'Dockerfile'))
-      const e = new Error(`Dockerfile already exists in ${this.kyso.dir}`)
-      e.userError = true
-      throw e
-    } catch (err) {
-      if (err.code !== 'ENOENT') {
-        throw err
-      }
-
-      const template = `FROM kyso/kyso-jupyter
-USER root
-
-# here you can run extra things like pip install
-# RUN pip install somepackage
-
-USER ds
-`
-      await writeFile(resolvePath(this.kyso.dir, 'Dockerfile'), template)
-      await studyJSON.merge(this.kyso.dir, {
-        docker: {
-          image: "."
-        }
-      })
-      console.log(`Created Dockerfile`)
-      console.log(`Use 'kyso docker run' to start docker app`)
+      return `kyso-local/${dir}`
     }
   }
 }

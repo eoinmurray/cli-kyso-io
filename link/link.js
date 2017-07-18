@@ -7,5 +7,7 @@ try {
   if (err.code === 'ENOENT' && err.syscall === 'uv_cwd') {
     console.error(`Current path doesn't exist!`)
     process.exit(1)
+  } else {
+    throw err
   }
 }

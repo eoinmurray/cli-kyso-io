@@ -2,7 +2,7 @@ const { resolve: resolvePath } = require('path')
 const { readFileSync, writeFileSync } = require('fs')
 
 const read = (path) => {
-  let studyConfig = null
+  let studyConfig = {}
   let hasStudyJson = false
 
   try {

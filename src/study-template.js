@@ -3,9 +3,7 @@ module.exports = async (args) => {
     name: args.name,
     author: args.author,
     tags: [],
-    scripts: {
-      start: "kyso docker start"
-    },
+    scripts: {},
     metadata: {}
   }
 

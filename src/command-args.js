@@ -3,6 +3,8 @@ const login = require('../src/login')
 const cfg = require('../src/kyso-cfg')
 const exit = require('../src/utils/exit')
 const { error } = require('../src/error')
+const { homedir } = require('os')
+const path = require('path')
 
 module.exports = async ({ noLogin = false } = {}) => {
   const argv = minimist(process.argv.slice(2), {
@@ -21,6 +23,11 @@ module.exports = async ({ noLogin = false } = {}) => {
   const args = argv._.slice(1)
   const subcommand = argv._[0]
   const apiUrl = argv.debug ? 'http://localhost:8080/parse' : 'https://api.kyso.io/parse'
+
+  if (argv.debug) {
+    const file = path.resolve(homedir(), '.kyso-dev.json')
+    cfg.setConfigFile(file)
+  }
 
   const config = cfg.read()
   let token = config.token

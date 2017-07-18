@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 const chalk = require('chalk')
 const table = require('text-table')
 const ms = require('ms')
@@ -188,19 +189,15 @@ const rm = async (kyso, args) => {
 }
 
 const create = async (kyso, args) => {
-  if (args.length !== 1) {
-    error('Invalid number of arguments')
-    return exit(1)
-  }
-
   const start = new Date()
-  const message = String(args[0])
+  let message = String(args[0])
+  if (message === 'undefined') message = undefined
   const dir = process.cwd()
   try {
     const versionMade = await kyso.createVersion(message, dir)
     const elapsed = ms(new Date() - start)
     if (versionMade) {
-      console.log(`${chalk.cyan('> Success!')} Version ${chalk.bold(chalk.underline(message))} created [${elapsed}]`)
+      console.log(`${chalk.cyan('> Success!')} Version created [${elapsed}]`)
     }
     return true
   } catch (err) {
@@ -212,7 +209,7 @@ const create = async (kyso, args) => {
   }
 }
 
-(async () => {
+;(async () => {
   try {
     const { args, argv, subcommand, token, apiUrl } = await getCommandArgs()
 

@@ -1,10 +1,14 @@
 const chalk = require('chalk')
 const fetch = require('node-fetch')
+const { homedir } = require('os')
+const path = require('path')
 const { validate } = require('email-validator')
 const readEmail = require('email-prompt')
 const cfg = require('./kyso-cfg')
 const wait = require('../src/utils/output/wait')
 const textInput = require('./utils/input/text')
+const Parse = require('parse/node')
+Parse.initialize('api-kyso-io')
 
 async function requestPasswordlessLogin(url, email) {
   const res = await fetch(`${url}/functions/passwordless`, {
@@ -29,6 +33,16 @@ async function requestPasswordlessLogin(url, email) {
 }
 
 async function register(url, debug, { retryEmail = false } = {}) {
+  if (debug) {
+    Parse.serverURL = url
+    const user = await Parse.User.logIn('test-user', 'test-user')
+    return {
+      email: user.toJSON().email,
+      token: user.toJSON().sessionToken,
+      nickname: user.toJSON().nickname
+    }
+  }
+
   let email
   try {
     email = await readEmail({ invalid: retryEmail })
@@ -76,6 +90,11 @@ async function register(url, debug, { retryEmail = false } = {}) {
 
 module.exports = async ({ debug, url }) => {
   const loginData = await register(url, debug)
+
+  if (debug) {
+    const file = path.resolve(homedir(), '.kyso-dev.json')
+    cfg.setConfigFile(file)
+  }
 
   cfg.merge(loginData)
   return loginData.token

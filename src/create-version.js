@@ -6,14 +6,16 @@ const tar = require('tar')
 const fetch = require('node-fetch')
 const progress = require('progress-stream')
 const ProgressBar = require('progress')
+const inquirer = require('inquirer')
 const lifecycle = require('./utils/lifecycle')
 const getGit = require('./utils/get-git')
-const resolveMain = require('./utils/resolve-main')
 const wait = require('./utils/output/wait')
 const studyJSON = require('./get-study-json')
 const { fileMapHash } = require('./utils/hash')
 const { getFileList } = require('./utils/get-file-map')
 const { versionHash } = require('./utils/hash')
+
+const SEP = process.platform.startsWith('win') ? '\\' : '/'
 
 const createVersion = async (pkg, dir, token, message, serverURL, { debug = false } = {}) => {
   delete pkg._version // eslint-disable-line
@@ -49,6 +51,65 @@ const createVersion = async (pkg, dir, token, message, serverURL, { debug = fals
     throw err
   }
 
+  const fileMap = {}
+  files.forEach(({ sha, file }) => {
+    const mapSha = fileMapHash(sha, file)
+    fileMap[mapSha] = file
+  })
+
+  let main = pkg.main || null
+  const fnames = files
+    .map(o => o.file)
+    .filter(name => name.split(SEP).length === 1)
+
+  if (!main) {
+    if (fnames.includes('notebook.ipynb')) main = 'notebook.ipynb'
+    if (fnames.includes('notebook.rmd')) main = 'notebook.rmd'
+    if (fnames.includes('notebook.md')) main = 'notebook.md'
+    if (fnames.includes('notebook.txt')) main = 'notebook.txt'
+  }
+
+  if (!main) {
+    const choices = fnames.filter(name =>
+      ['.ipynb', '.md'].includes(path.extname(name))
+    )
+
+    if (choices.length === 0) {
+      const er = new Error(`\nCannot find any .md or .ipynb files. Refusing to make version.`)
+      er.userError = true
+      throw er
+    }
+
+    if (choices.length === 1) {
+      main = choices[0]
+    } else {
+      const { _main } = await inquirer.prompt([{
+        name: '_main',
+        message: 'Which file is the main file?',
+        type: 'list',
+        choices
+      }])
+
+      main = _main
+    }
+  }
+
+  studyJSON.merge(dir, { main })
+
+  pkg.main = main // eslint-disable-line
+
+  const body = {
+    sha: versionSha,
+    message,
+    pkg,
+    repository: await getGit(),
+    main,
+    filename: `upload-${versionSha}.tgz`,
+    fileMap
+  }
+
+  headers.body = JSON.stringify(body)
+
   const str = progress({ length: contentLength, time: 100 })
   str.on('progress', p => bar.update(p.percentage / 100))
 
@@ -56,31 +117,14 @@ const createVersion = async (pkg, dir, token, message, serverURL, { debug = fals
   let s = () => {}
   stream.on('finish', () => { s = wait(`Saving version`) })
 
-  const fileMap = {}
-  files.forEach(({ sha, file }) => {
-    const mapSha = fileMapHash(sha, file)
-    fileMap[mapSha] = file
-  })
-
-  const body = {
-    sha: versionSha,
-    message,
-    pkg,
-    repository: await getGit(),
-    main: await resolveMain(files, pkg),
-    filename: `upload-${versionSha}.tgz`,
-    fileMap
-  }
-
-  headers.body = JSON.stringify(body)
   const res = await fetch(`${url}/create-version`, { method: 'POST', body: stream, headers })
   if (res.status !== 200) {
     const err = new Error(res.statusText)
     throw err
   }
   const version = await res.json()
-
   s()
+
   if (version.hasOwnProperty('error')) { // eslint-disable-line
     const err = new Error(version.error)
     err.userError = true

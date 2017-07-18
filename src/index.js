@@ -11,6 +11,8 @@ const studyJSON = require('./get-study-json')
 const getSVF = require('./get-svf')
 const clone = require('./clone')
 const cfg = require('./kyso-cfg')
+const { homedir } = require('os')
+
 
 const lifecycle = require('./utils/lifecycle')
 const findOne = require('./utils/find-one')
@@ -27,6 +29,11 @@ const Invite = Parse.Object.extend('Invite')
 
 module.exports = class Kyso {
   constructor({ url, token, debug = false, dir = process.cwd() }) {
+    if (debug) {
+      const file = path.resolve(homedir(), '.kyso-dev.json')
+      cfg.setConfigFile(file)
+    }
+
     Parse.serverURL = url
     this.serverURL = url
     this.parse = Parse
@@ -169,13 +176,24 @@ module.exports = class Kyso {
   }
 
   async createVersion(message) {
+    let _message = message
     if (!this.hasStudyJson) {
-      const error = new Error(`No study.json! Run 'kyso create <study-name> to make a study.'`)
-      error.userError = true
-      throw error
+      await this.createStudy(path.basename(this.dir), null, false)
+      const { hasStudyJson, studyConfig } = studyJSON.read(this.dir)
+      this.hasStudyJson = hasStudyJson
+      // lets copy the pkg so we can mutate it
+      this.pkg = hasStudyJson ? Object.assign(studyConfig) : null
+      if (!message) {
+        _message = "initial version"
+      }
     }
 
-    return await createVersion(this.pkg, this.dir, this._token, message, this.serverURL, { debug: this.debug }) // eslint-disable-line
+    if (!_message) {
+      const versions = await this.lsVersions()
+      _message = `v${versions.length}`
+    }
+
+    return await createVersion(this.pkg, this.dir, this._token, _message, this.serverURL, { debug: this.debug }) // eslint-disable-line
   }
 
   async currentVersion(dest) {

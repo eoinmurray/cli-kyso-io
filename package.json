@@ -79,6 +79,7 @@
     "hard-rejection": "^1.0.0",
     "ignore": "^3.2.7",
     "in-publish": "^2.0.0",
+    "inquirer": "^3.2.0",
     "minimist": "^1.2.0",
     "mkdirp": "^0.5.1",
     "moment": "^2.18.1",
