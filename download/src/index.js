@@ -63,7 +63,7 @@ async function main() {
   showProgress(0)
 
   const name = platformToName[process.platform]
-  const url = `https://github.com/eoinmurray/cli-kyso-io/releases/download/${packageJSON.version}/${name}`
+  const url = `https://github.com/eoinmurray/cli-kyso-io/releases/download/v${packageJSON.version}/${name}`
   const resp = await fetch(url)
 
   if (resp.status !== 200) {

@@ -189,8 +189,13 @@ module.exports = class Kyso {
     }
 
     if (!_message) {
-      const versions = await this.lsVersions()
-      _message = `v${versions.length}`
+      const versions = await this.lsVersions({ throwENOENT: false })
+      if (!versions) {
+        await this.createStudy(path.basename(this.dir), null, false)
+        _message = "initial version"
+      } else {
+        _message = `v${versions.length}`
+      }
     }
 
     return await createVersion(this.pkg, this.dir, this._token, _message, this.serverURL, { debug: this.debug }) // eslint-disable-line
@@ -200,7 +205,7 @@ module.exports = class Kyso {
     return currentVersion(dest, this.pkg, this._token, { debug: this.debug })
   }
 
-  async lsVersions({ studyName = null } = {}) {
+  async lsVersions({ studyName = null, throwENOENT = true } = {}) {
     if (!this.hasStudyJson && !studyName) {
       const error = new Error(`No study.json! Run 'kyso create <study-name> to make a study.'`)
       error.userError = true
@@ -209,7 +214,10 @@ module.exports = class Kyso {
 
     const fullname = `${this.pkg.author}/${studyName || this.pkg.name}`
     const study = await findOne(fullname, Study, this._token,
-      { throwENOENT: true, key: 'fullname' })
+      { throwENOENT, key: 'fullname' })
+
+    if(!study) return null
+
     const query = await study.relation('versions').query()
     query.descending('createdAt')
     const versions = await query.find({ sessionToken: this._token })
@@ -242,7 +250,7 @@ module.exports = class Kyso {
       { versionSha, debug: this.debug })
     s()
 
-    await clone(study, version, files, this.dir, { target })
+    await clone(study, version, files, this.dir, { target, debug: this.debug })
     const dest = target || path.join(this.dir, study.get('name'))
     return studyJSON.merge(dest, { _version: version.get('sha') })
   }

@@ -18,6 +18,7 @@ const { versionHash } = require('./utils/hash')
 const SEP = process.platform.startsWith('win') ? '\\' : '/'
 
 const createVersion = async (pkg, dir, token, message, serverURL, { debug = false } = {}) => {
+  let s = () => {}
   delete pkg._version // eslint-disable-line
   await lifecycle(pkg, 'preversion', dir, true)
 
@@ -43,14 +44,6 @@ const createVersion = async (pkg, dir, token, message, serverURL, { debug = fals
   })
 
   const contentLength = (await fs.stat(tarPath)).size
-
-  const mb = contentLength / 1000000.0
-  if (mb > 32) {
-    const err = new Error('Studies are currently limited to 32mb on the free plan.')
-    err.userError = true
-    throw err
-  }
-
   const fileMap = {}
   files.forEach(({ sha, file }) => {
     const mapSha = fileMapHash(sha, file)
@@ -95,8 +88,41 @@ const createVersion = async (pkg, dir, token, message, serverURL, { debug = fals
   }
 
   studyJSON.merge(dir, { main })
-
   pkg.main = main // eslint-disable-line
+
+  s = wait(`Creating version`)
+
+  const urlReq = await fetch(`${url}/functions/version-start`, {
+    method: 'POST',
+    headers: {
+      'X-Parse-Application-Id': 'api-kyso-io',
+      'Content-type': 'application/json',
+      'X-Parse-Session-Token': token
+    },
+    body: JSON.stringify({
+      sha: versionSha,
+      message,
+      pkg,
+      repository: await getGit(),
+      main,
+      filename: `upload-${versionSha}.tgz`,
+      fileMap,
+    })
+  })
+
+  if (urlReq.status !== 200) {
+    const err = new Error(urlReq.statusText)
+    throw err
+  }
+
+  const jsonRes = await urlReq.json()
+  if (jsonRes.hasOwnProperty('error')) { // eslint-disable-line
+    const err = new Error(jsonRes.error)
+    err.userError = true
+    throw err
+  }
+
+  const { version, study, signedUrl } = jsonRes.result
 
   const body = {
     sha: versionSha,
@@ -114,25 +140,47 @@ const createVersion = async (pkg, dir, token, message, serverURL, { debug = fals
   str.on('progress', p => bar.update(p.percentage / 100))
 
   const stream = fs.createReadStream(tarPath).pipe(str)
-  let s = () => {}
   stream.on('finish', () => { s = wait(`Saving version`) })
 
-  const res = await fetch(`${url}/create-version`, { method: 'POST', body: stream, headers })
+  s()
+
+  const res = await fetch(`${signedUrl}`, { method: 'PUT', body: stream })
   if (res.status !== 200) {
     const err = new Error(res.statusText)
     throw err
   }
-  const version = await res.json()
-  s()
 
-  if (version.hasOwnProperty('error')) { // eslint-disable-line
-    const err = new Error(version.error)
+  s(); s = wait(`Finalising version`)
+
+  const finReq = await fetch(`${url}/functions/version-finish`, {
+    method: 'POST',
+    headers: {
+      'X-Parse-Application-Id': 'api-kyso-io',
+      'Content-type': 'application/json',
+      'X-Parse-Session-Token': token
+    },
+    body: JSON.stringify({
+      filename: `upload-${versionSha}.tgz`,
+      studyId: study.objectId,
+      versionId: version.objectId
+    })
+  })
+
+  if (finReq.status !== 200) {
+    const err = new Error(finReq.statusText)
+    throw err
+  }
+
+  const finJson = await finReq.json()
+  if (finJson.hasOwnProperty('error')) { // eslint-disable-line
+    const err = new Error(finJson.error)
     err.userError = true
     throw err
   }
 
   await lifecycle(pkg, 'postversion', dir, true)
   studyJSON.merge(dir, { _version: versionSha })
+  s()
   return version
 }
 

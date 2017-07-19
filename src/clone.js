@@ -1,5 +1,6 @@
 const fs = require('fs-extra')
 const https = require('https')
+const http = require('http')
 const path = require('path')
 const pify = require('pify')
 const mkdirp = require('mkdirp')
@@ -7,13 +8,16 @@ const _debug = require('./utils/output/debug')
 const wait = require('./utils/output/wait')
 const { fileMapHash } = require('./utils/hash')
 
-const download = async (url, dest) => new Promise(async (resolve, reject) => { // eslint-disable-line
+const download = async (url, dest, { debug = false } = {}) => new Promise(async (resolve, reject) => { // eslint-disable-line
   await pify(mkdirp)(path.dirname(dest))
   const file = fs.createWriteStream(dest)
 
   const st = wait(`Downloading ${path.basename(dest)}`, 'bouncingBar')
 
-  https
+  let protocol = https
+  if (debug) protocol = http
+
+  protocol
     .get(url, (response) => {
       response.pipe(file)
       file
@@ -68,6 +72,6 @@ module.exports = async (study, version, files, wd, { target = null, force = fals
     }
 
     _debug(debug, `Downloading ${file.get('name')} into ${dest}`)
-    return download(file.get('file').url(), dest)
+    return download(file.get('file').url(), dest, { debug })
   }))
 }

@@ -2,7 +2,7 @@
   "name": "kyso",
   "version": "0.9.0",
   "description": "Kyso command line interface",
-  "repository": "eoinmurray/cli-kyso-io",
+  "repository": "kyso-io/kyso-cli",
   "author": "eoinmurray <eoin@kyso.io>",
   "license": "MIT",
   "scripts": {

@@ -154,7 +154,7 @@ module.exports = class {
       return console.log(`Dockerfile already exists, not overwriting.`)
     }
 
-    let template = `FROM kyso/jupyter\n\n# Add your commands here, example:\n# RUN pip install django\n`
+    let template = `FROM kyso/jupyter\n\n# Add your commands here, example:\n# RUN pip3 install django --user\n# Or use a requirements.txt file:\n# RUN pip3 install -r requirements.txt --user\n# Or just run any other bash commands!\n`
 
     if (fs.existsSync(path.join(process.cwd(), `requirements.txt`))) {
       console.log(`requirements.txt exists, adding to Dockfile`)
