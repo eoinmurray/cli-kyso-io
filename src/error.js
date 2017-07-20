@@ -1,4 +1,6 @@
+const chalk = require('chalk')
 const error = require('./utils/output/error')
+
 
 function handleError(err) {
   if (err.status === 403) {
@@ -15,15 +17,15 @@ function handleError(err) {
     return error('Rate limit exceeded error.')
   }
 
-  if (err.userError) {
-    return error(`Error! (${err.message})\n${err.stack || ''}`)
-  }
-
   if (err.status === 500) {
     return error('Unexpected server error. Please retry.')
   }
 
-  return error(`Unexpected error. (${err.message})\n${err.stack || ''}`)
+  // if (err.userError) {
+  //   return error(`Error! (${err.message})\n\n${chalk.dim(err.stack) || ''}`)
+  // }
+
+  return error(`${chalk.red(err.message)}\n\n${chalk.dim(err.stack) || ''}`)
 }
 
 module.exports = {

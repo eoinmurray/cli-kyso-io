@@ -92,7 +92,7 @@ const createVersion = async (pkg, dir, token, message, serverURL, { debug = fals
 
   s = wait(`Creating version`)
 
-  const urlReq = await fetch(`${url}/functions/version-start`, {
+  const startReq = await fetch(`${url}/functions/version-start`, {
     method: 'POST',
     headers: {
       'X-Parse-Application-Id': 'api-kyso-io',
@@ -110,19 +110,14 @@ const createVersion = async (pkg, dir, token, message, serverURL, { debug = fals
     })
   })
 
-  if (urlReq.status !== 200) {
-    const err = new Error(urlReq.statusText)
+  const startBody = await startReq.json()
+
+  if (startReq.status !== 200) {
+    const err = new Error(`(${startReq.status} - ${startReq.statusText}) ${startBody.error}`)
     throw err
   }
 
-  const jsonRes = await urlReq.json()
-  if (jsonRes.hasOwnProperty('error')) { // eslint-disable-line
-    const err = new Error(jsonRes.error)
-    err.userError = true
-    throw err
-  }
-
-  const { version, study, signedUrl } = jsonRes.result
+  const { version, study, signedUrl } = startBody.result
 
   const body = {
     sha: versionSha,
@@ -144,9 +139,10 @@ const createVersion = async (pkg, dir, token, message, serverURL, { debug = fals
 
   s()
 
-  const res = await fetch(`${signedUrl}`, { method: 'PUT', body: stream })
-  if (res.status !== 200) {
-    const err = new Error(res.statusText)
+  const uploadReq = await fetch(`${signedUrl}`, { method: 'PUT', body: stream })
+  const uploadBody = await uploadReq.text()
+  if (uploadReq.status !== 200) {
+    const err = new Error(`(${uploadReq.status} - ${uploadReq.statusText}) ${uploadBody}`)
     throw err
   }
 
@@ -166,15 +162,9 @@ const createVersion = async (pkg, dir, token, message, serverURL, { debug = fals
     })
   })
 
+  const finBody = await finReq.json()
   if (finReq.status !== 200) {
-    const err = new Error(finReq.statusText)
-    throw err
-  }
-
-  const finJson = await finReq.json()
-  if (finJson.hasOwnProperty('error')) { // eslint-disable-line
-    const err = new Error(finJson.error)
-    err.userError = true
+    const err = new Error(`(${finReq.status} - ${finReq.statusText}) ${finBody.error}`)
     throw err
   }
 

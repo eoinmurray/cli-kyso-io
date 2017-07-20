@@ -8,5 +8,5 @@ module.exports = msg => {
   }
 
   if (spinner.stop) spinner.stop()
-  console.error(`${chalk.red('> Error!')} ${msg}`)
+  console.error(`\n${chalk.red('> Error!')} ${msg}`)
 }

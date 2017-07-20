@@ -13,7 +13,6 @@ const clone = require('./clone')
 const cfg = require('./kyso-cfg')
 const { homedir } = require('os')
 
-
 const lifecycle = require('./utils/lifecycle')
 const findOne = require('./utils/find-one')
 const _debug = require('./utils/output/debug')
@@ -216,7 +215,7 @@ module.exports = class Kyso {
     const study = await findOne(fullname, Study, this._token,
       { throwENOENT, key: 'fullname' })
 
-    if(!study) return null
+    if (!study) return null
 
     const query = await study.relation('versions').query()
     query.descending('createdAt')
