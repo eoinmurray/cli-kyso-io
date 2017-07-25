@@ -78,6 +78,12 @@ module.exports = class {
     return this.run(args.concat(extraArgs))
   }
 
+  async jupyterApp(extraArgs) {
+    const cwd = process.cwd()
+    const args = ['run', '--rm', '-it', '-v', `${cwd}:/home/ds/notebooks`, '-p', '8000:8000', this.image, 'node', '/home/ds/scripts/jupyter-app/index.js']
+    return this.run(args.concat(extraArgs))
+  }
+
   async dashboard(extraArgs) {
     const cwd = process.cwd()
     const args = ['run', '--rm', '-it', '-v', `${cwd}:/home/ds/notebooks`, '-p', '3000:3000', this.image, '/home/ds/scripts/dashboard.sh']

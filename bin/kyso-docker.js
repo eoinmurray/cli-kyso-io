@@ -21,9 +21,7 @@ const help = async () => {
 
   ${chalk.gray('kyso jupyter')} Opens a Jupyter notebook
 
-  ${chalk.gray('kyso dashboard')} Starts the current dir as a Jupyter dashboard
-
-  ${chalk.gray('kyso jupyter-http')} Starts a notebook in http mode
+  ${chalk.gray('kyso jupyter-app')} Starts the current dir as a Jupyter App
 
   ${chalk.gray('kyso python')} or ${chalk.gray('kyso python3')} Starts python3.5
 
@@ -74,6 +72,10 @@ const help = async () => {
 
     if (subcommand === 'jupyter-http') {
       return await docker.jupyterHttp(args)
+    }
+
+    if (subcommand === 'jupyter-app') {
+      return await docker.jupyterApp(args)
     }
 
     if (subcommand === 'python3' || subcommand === 'python') {
