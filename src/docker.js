@@ -8,10 +8,47 @@ const wait = require('./utils/output/wait')
 const cfg = require('./kyso-cfg')
 const { homedir } = require('os')
 
+const dockerFileTemplate = (image) =>
+`FROM ${image}
+
+# We change to the root user to install stuff
+USER ""
+
+# Add your commands here, example:
+  # RUN pip3 install django
+  # Or use a requirements.txt file:
+  # RUN pip3 install -r requirements.txt
+  # Or just run any other bash commands!
+  # RUN apt-get update -y
+
+# Now we change back to the normal user so our programs can't break the install
+USER ds
+`
+
+const dockerFileRequirementsTemplate = (image) =>
+`FROM ${image}
+
+# We change to the root user to install stuff
+USER ""
+
+# Kyso found a requirements.txt file so we add it
+ADD requirements.txt /tmp/requirements.txt
+RUN pip3 install -r /tmp/requirements.txt
+
+# Add other commands here, example:
+  # RUN pip3 install django
+  # Or just run any other bash commands!
+  # RUN apt-get update -y
+
+# Now we change back to the normal user so our programs can't break the install
+USER ds
+`
+
 module.exports = class {
   constructor(kyso) {
     this.kyso = kyso
-    this.image = 'kyso/jupyter'
+    this.canonicalImage = 'kyso/jupyter:v0.2.0'
+    this.image = this.canonicalImage
 
     const dockerFile = path.join(process.cwd(), `Dockerfile`)
     if (fs.existsSync(dockerFile)) {
@@ -27,9 +64,9 @@ module.exports = class {
     return spawnSync('docker', ['pull', this.image], { stdio: 'inherit' })
   }
 
-  async run(args) {
+  async run(args, port = null) {
     await this.checkForImage()
-    if (this.image !== 'kyso/jupyter') {
+    if (this.image !== this.canonicalImage) {
       console.log(`\n\nFound local Dockerfile. Starting ${this.image}\n\n`)
     }
     const cmd = spawn('docker', args, { stdio: [0, 'pipe', 0] })
@@ -44,7 +81,7 @@ module.exports = class {
         })
       }
       if (chunk.includes('Jupyter dashboard server listening on')) {
-        opn(`http://0.0.0.0:3000`)
+        opn(`http://0.0.0.0:${port}`)
       }
     })
   }
@@ -52,7 +89,7 @@ module.exports = class {
   async bash(extraArgs) {
     if (!extraArgs || extraArgs.length === 0) extraArgs = ['bash'] // eslint-disable-line
     const cwd = process.cwd()
-    const args = ['run', '--rm', '-it', '-v', `${cwd}:/home/ds/notebooks`, '-p', '8888:8888', this.image]
+    const args = ['run', '--rm', '-it', '-v', `${cwd}:/app`, '-p', '8888:8888', this.image]
     return this.run(args.concat(extraArgs))
   }
 
@@ -60,7 +97,7 @@ module.exports = class {
     await this.checkForImage()
     if (!extraArgs || extraArgs.length === 0) extraArgs = ['bash'] // eslint-disable-line
     const cwd = process.cwd()
-    const args = ['create', '-v', `${cwd}:/home/ds/notebooks`, this.image]
+    const args = ['create', '-v', `${cwd}:/app`, this.image]
     const re = await spawnSync('docker', args)
     const containerId = `${re.stdout}`.trim()
     await spawnSync('docker', ['start', containerId])
@@ -74,43 +111,31 @@ module.exports = class {
 
   async jupyter(extraArgs) {
     const cwd = process.cwd()
-    const args = ['run', '--rm', '-it', '-v', `${cwd}:/home/ds/notebooks`, '-p', '8888:8888', this.image]
-    return this.run(args.concat(extraArgs))
+    const args = ['run', '--rm', '-it', '-v', `${cwd}:/app`, '-p', '8888:8888', this.image, 'jupyter']
+    return this.run(args.concat(extraArgs), '8888')
   }
 
   async jupyterApp(extraArgs) {
     const cwd = process.cwd()
-    const args = ['run', '--rm', '-it', '-v', `${cwd}:/home/ds/notebooks`, '-p', '8000:8000', this.image, 'node', '/home/ds/scripts/jupyter-app/index.js']
-    return this.run(args.concat(extraArgs))
-  }
-
-  async dashboard(extraArgs) {
-    const cwd = process.cwd()
-    const args = ['run', '--rm', '-it', '-v', `${cwd}:/home/ds/notebooks`, '-p', '3000:3000', this.image, '/home/ds/scripts/dashboard.sh']
-    return this.run(args.concat(extraArgs))
-  }
-
-  async jupyterHttp(extraArgs) {
-    const cwd = process.cwd()
-    const args = ['run', '--rm', '-it', '-v', `${cwd}:/home/ds/notebooks`, '-p', '8889:8888', this.image, '/home/ds/scripts/jupyter-http.sh']
-    return this.run(args.concat(extraArgs))
+    const args = ['run', '--rm', '-it', '-v', `${cwd}:/app`, '-p', '8000:8000', this.image, 'jupyter-app']
+    return this.run(args.concat(extraArgs), '8000')
   }
 
   async python3(extraArgs) {
     const cwd = process.cwd()
-    const args = ['run', '--rm', '-it', '-v', `${cwd}:/home/ds/notebooks`, '-p', '8888:8888', this.image, 'python3']
+    const args = ['run', '--rm', '-it', '-v', `${cwd}:/app`, '-p', '8888:8888', this.image, 'python3']
     return this.run(args.concat(extraArgs))
   }
 
   async python2(extraArgs) {
     const cwd = process.cwd()
-    const args = ['run', '--rm', '-it', '-v', `${cwd}:/home/ds/notebooks`, '-p', '8888:8888', this.image, 'python2']
+    const args = ['run', '--rm', '-it', '-v', `${cwd}:/app`, '-p', '8888:8888', this.image, 'python2']
     return this.run(args.concat(extraArgs))
   }
 
   async node(extraArgs) {
     const cwd = process.cwd()
-    const args = ['run', '--rm', '-it', '-v', `${cwd}:/home/ds/notebooks`, '-p', '8888:8888', this.image, 'node']
+    const args = ['run', '--rm', '-it', '-v', `${cwd}:/app`, '-p', '8888:8888', this.image, 'node']
     return this.run(args.concat(extraArgs))
   }
 
@@ -126,7 +151,7 @@ module.exports = class {
         port = exposeLine[0].slice(7).trim()
       }
     }
-    const args = ['run', '--rm', '-it', '-v', `${cwd}:/home/ds/notebooks`, '-p', `${port}:${port}`, this.image]
+    const args = ['run', '--rm', '-it', '-v', `${cwd}:/app`, '-p', `${port}:${port}`, this.image]
     return this.run(args.concat(extraArgs))
   }
 
@@ -160,11 +185,11 @@ module.exports = class {
       return console.log(`Dockerfile already exists, not overwriting.`)
     }
 
-    let template = `FROM kyso/jupyter\n\n# Add your commands here, example:\n# RUN pip3 install django --user\n# Or use a requirements.txt file:\n# RUN pip3 install -r requirements.txt --user\n# Or just run any other bash commands!\n`
+    let template = dockerFileTemplate(this.canonicalImage)
 
     if (fs.existsSync(path.join(process.cwd(), `requirements.txt`))) {
       console.log(`requirements.txt exists, adding to Dockfile`)
-      template = `FROM kyso/jupyter\n\nADD requirements.txt /tmp/requirements.txt\nRUN pip3 install -r /tmp/requirements.txt --user`
+      template = dockerFileRequirementsTemplate(this.canonicalImage)
     }
 
     template = `# kyso-image-name: ${this.createImageName()}\n${template}`
@@ -179,7 +204,7 @@ module.exports = class {
       const images = await docker.listImages()
       const tags = [].concat.apply([], images.map(image => image.RepoTags)) // eslint-disable-line
 
-      if (!(tags.includes(this.image) || tags.includes(`${this.image}:latest`))) {
+      if (!(tags.includes(this.image))) {
         this.pull()
       }
     } catch (err) {
