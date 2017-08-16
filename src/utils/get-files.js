@@ -27,6 +27,8 @@ npm-debug.log
 config.gypi
 node_modules
 CVS
+.kyso.json
+.kyso-dev.json
 Icon?
 Icon^M
 Icon*`

@@ -250,8 +250,10 @@ module.exports = class Kyso {
     s()
 
     await clone(study, version, files, this.dir, { target, debug: this.debug })
-    const dest = target || path.join(this.dir, study.get('name'))
-    return studyJSON.merge(dest, { _version: version.get('sha') })
+    if (version) {
+      const dest = target || path.join(this.dir, study.get('name'))
+      studyJSON.merge(dest, { _version: version.get('sha') })
+    }
   }
 
   async checkout(versionSha) {

@@ -4,6 +4,7 @@ const http = require('http')
 const path = require('path')
 const pify = require('pify')
 const mkdirp = require('mkdirp')
+const makeTemplate = require('./study-template')
 const _debug = require('./utils/output/debug')
 const wait = require('./utils/output/wait')
 const { fileMapHash } = require('./utils/hash')
@@ -54,24 +55,29 @@ module.exports = async (study, version, files, wd, { target = null, force = fals
     }
   }
 
-  const fileMap = version.get('fileMap')
   await pify(mkdirp)(studyDir)
-  await Promise.all(files.map(async (file) => {
-    const mapSha = fileMapHash(file.get('sha'), file.get('name'))
+  if (!version) {
+    const template = await makeTemplate({ name: study.get('name'), author: study.get('author') })
+    await fs.writeFile(path.join(studyDir, 'study.json'), template)
+  } else {
+    const fileMap = version.get('fileMap')
+    await Promise.all(files.map(async (file) => {
+      const mapSha = fileMapHash(file.get('sha'), file.get('name'))
 
-    const dest = path.join(studyDir, fileMap[mapSha])
-    if (!file.get('file')) {
-      return fs.writeFile(dest, '')
-    }
-    if (file.get('name') === 'study.json') {
-      const st = wait(`Writing study.json`, 'bouncingBar')
-      const pkg = version.get('pkg')
-      pkg._version = version.get('sha')
-      await fs.writeFile(dest, JSON.stringify(pkg, null, 2))
-      return st(true)
-    }
+      const dest = path.join(studyDir, fileMap[mapSha])
+      if (!file.get('file')) {
+        return fs.writeFile(dest, '')
+      }
+      if (file.get('name') === 'study.json') {
+        const st = wait(`Writing study.json`, 'bouncingBar')
+        const pkg = version.get('pkg')
+        pkg._version = version.get('sha')
+        await fs.writeFile(dest, JSON.stringify(pkg, null, 2))
+        return st(true)
+      }
 
-    _debug(debug, `Downloading ${file.get('name')} into ${dest}`)
-    return download(file.get('file').url(), dest, { debug })
-  }))
+      _debug(debug, `Downloading ${file.get('name')} into ${dest}`)
+      return download(file.get('file').url(), dest, { debug })
+    }))
+  }
 }
